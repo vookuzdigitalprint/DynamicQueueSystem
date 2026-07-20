@@ -14,8 +14,8 @@ export const firebaseConfig = {
 
 function url(path = "/") {
   const clean = path === "/" ? "/" : path;
-  const proxy = location.port === "5500" ? "http://" + location.hostname + ":5599/fb" : "/fb";
-  return `${proxy}${clean}.json`;
+  const base = "https://vookuzdqs-default-rtdb.asia-southeast1.firebasedatabase.app";
+  return `${base}${clean}.json`;
 }
 
 let evtSource = null;
