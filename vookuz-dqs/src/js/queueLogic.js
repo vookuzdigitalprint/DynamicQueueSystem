@@ -18,11 +18,23 @@ export function moveToDesigner(number, designerId) {
     if (designerCount(designerId) >= GLOBAL_LIMIT_PER_DESIGNER) return s;
     if ((d.queue || []).includes(number) || d.current_processing === number) return s;
     const waiting = (s.waiting_pool || []).filter((x) => x !== number);
+    
+    let current_processing = d.current_processing;
+    let queue = [...(d.queue || [])];
+    let broadcast_trigger = s.broadcast_trigger;
+
+    if (current_processing == null) {
+      current_processing = number;
+      broadcast_trigger = { queue_number: number, designer_name: d.name, timestamp: Date.now() };
+    } else {
+      queue.push(number);
+    }
+
     const designers = {
       ...s.designers,
-      [designerId]: { ...d, queue: [...(d.queue || []), number] },
+      [designerId]: { ...d, current_processing, queue },
     };
-    return { ...s, waiting_pool: waiting, designers };
+    return { ...s, waiting_pool: waiting, designers, broadcast_trigger };
   });
 }
 
@@ -35,12 +47,24 @@ export function moveBetweenDesigners(number, fromId, toId) {
     if ((to.queue || []).includes(number) || to.current_processing === number) return s;
     const fromQueue = (from.queue || []).filter((x) => x !== number);
     const fromProcessing = from.current_processing === number ? null : from.current_processing;
+    
+    let current_processing = to.current_processing;
+    let toQueue = [...(to.queue || [])];
+    let broadcast_trigger = s.broadcast_trigger;
+
+    if (current_processing == null) {
+      current_processing = number;
+      broadcast_trigger = { queue_number: number, designer_name: to.name, timestamp: Date.now() };
+    } else {
+      toQueue.push(number);
+    }
+
     const designers = {
       ...s.designers,
       [fromId]: { ...from, queue: fromQueue, current_processing: fromProcessing },
-      [toId]: { ...to, queue: [...(to.queue || []), number] },
+      [toId]: { ...to, queue: toQueue, current_processing },
     };
-    return { ...s, designers };
+    return { ...s, designers, broadcast_trigger };
   });
 }
 
