@@ -138,8 +138,12 @@ export function requestFromPool(designerId) {
     if ((d.queue || []).length || d.current_processing != null) return s;
     if (!(s.waiting_pool || []).length) return s;
     const [first, ...rest] = s.waiting_pool || [];
-    const designers = { ...s.designers, [designerId]: { ...d, queue: [first] } };
-    return { ...s, waiting_pool: rest, designers };
+    
+    // Automatically set as current_processing and broadcast
+    const broadcast_trigger = { queue_number: first, designer_name: d.name, timestamp: Date.now() };
+    const designers = { ...s.designers, [designerId]: { ...d, current_processing: first, queue: [] } };
+    
+    return { ...s, waiting_pool: rest, designers, broadcast_trigger };
   });
 }
 
@@ -151,7 +155,18 @@ export function selfAdd(designerId, number) {
     if (d.status !== "ACTIVE") return s;
     if (designerCount(designerId) >= GLOBAL_LIMIT_PER_DESIGNER) return s;
     if ((d.queue || []).includes(n) || d.current_processing === n) return s;
-    return { ...s, designers: { ...s.designers, [designerId]: { ...d, queue: [...(d.queue || []), n] } } };
+    
+    let current_processing = d.current_processing;
+    let queue = [...(d.queue || [])];
+    
+    if (current_processing == null) {
+      // If desk is empty, customer is already there. Assign directly, NO broadcast.
+      current_processing = n;
+    } else {
+      queue.push(n);
+    }
+
+    return { ...s, designers: { ...s.designers, [designerId]: { ...d, queue, current_processing } } };
   });
   return true;
 }
