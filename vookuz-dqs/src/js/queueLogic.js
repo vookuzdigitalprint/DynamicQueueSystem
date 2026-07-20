@@ -131,3 +131,17 @@ export function selfAdd(designerId, number) {
   });
   return true;
 }
+
+export function returnToPool(number, fromId) {
+  setState((s) => {
+    const from = s.designers[fromId];
+    if ((s.waiting_pool || []).includes(number)) return s;
+    const fromQueue = (from.queue || []).filter((x) => x !== number);
+    const fromProcessing = from.current_processing === number ? null : from.current_processing;
+    const designers = {
+      ...s.designers,
+      [fromId]: { ...from, queue: fromQueue, current_processing: fromProcessing },
+    };
+    return { ...s, waiting_pool: [...(s.waiting_pool || []), number], designers };
+  });
+}
