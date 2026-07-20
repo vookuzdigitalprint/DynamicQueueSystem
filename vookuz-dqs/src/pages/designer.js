@@ -65,7 +65,11 @@ export function renderDesigner(root, sess) {
   root.querySelector("#finish").onclick = () => finishNumber(id);
   root.querySelector("#req").onclick = () => requestFromPool(id);
   const input = root.querySelector("#self-num");
-  const doSelf = () => { if (selfAdd(id, input.value)) input.value = ""; };
+  const doSelf = () => { 
+    const val = input.value;
+    input.value = ""; 
+    selfAdd(id, val); 
+  };
   root.querySelector("#self-add").onclick = doSelf;
   input.onkeydown = (e) => { if (e.key === "Enter") doSelf(); };
   
