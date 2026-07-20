@@ -57,6 +57,8 @@ function showOverlay(root, b) {
   overlayTimer = setTimeout(() => ov.classList.add("hidden"), TV_OVERLAY_MS);
 }
 
+let currentUtterance = null;
+
 function processAudio() {
   if (speaking || !audioQueue.length) return;
   const b = audioQueue.shift();
@@ -64,6 +66,10 @@ function processAudio() {
   const u = new SpeechSynthesisUtterance(
     `Nomor antrian ${terbilang(b.queue_number)}. Silakan menuju ke ${namaTerbilang(b.designer_name)}.`
   );
+  
+  // Store globally to prevent Garbage Collection from cutting off audio
+  currentUtterance = u;
+
   u.lang = "id-ID";
   u.onend = () => { speaking = false; processAudio(); };
   u.onerror = (e) => { 
