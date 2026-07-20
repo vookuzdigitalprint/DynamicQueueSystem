@@ -6,6 +6,7 @@ import {
   moveBetweenDesigners,
   toggleDesigner,
   returnToPool,
+  deleteNumber,
 } from "../js/queueLogic.js";
 
 let dragData = null;
@@ -38,6 +39,9 @@ export function mountAdmin(root, sess) {
             <button class="btn accent sm" id="add-btn">+</button>
           </div>
           <div class="dcol-list" data-drop="waiting" id="pool-list"></div>
+          <div class="trash-zone" data-drop="trash">
+            🗑️ Tarik Kesini untuk Hapus
+          </div>
         </div>
       </div>
     `;
@@ -130,18 +134,24 @@ function wire(root) {
     if (el) el.classList.remove("dragging");
   });
   grid.addEventListener("dragover", (e) => {
-    if (e.target.closest(".dcol-list")) e.preventDefault();
+    if (e.target.closest(".dcol-list") || e.target.closest(".trash-zone")) e.preventDefault();
   });
   grid.addEventListener("drop", (e) => {
-    const zone = e.target.closest(".dcol-list");
-    if (!zone || !dragData) return;
+    const dropTarget = e.target.closest(".dcol-list") || e.target.closest(".trash-zone");
+    if (!dropTarget || !dragData) return;
     e.preventDefault();
-    const to = zone.dataset.drop;
+    const to = dropTarget.dataset.drop;
     const { num, from } = dragData;
-    if (from === "waiting" && to !== "waiting") moveToDesigner(num, to);
-    else if (from !== "waiting" && to === "waiting") returnToPool(num, from);
-    else if (from !== "waiting" && to !== "waiting" && from !== to)
+    
+    if (to === "trash") {
+      deleteNumber(num, from);
+    } else if (from === "waiting" && to !== "waiting") {
+      moveToDesigner(num, to);
+    } else if (from !== "waiting" && to === "waiting") {
+      returnToPool(num, from);
+    } else if (from !== "waiting" && to !== "waiting" && from !== to) {
       moveBetweenDesigners(num, from, to);
+    }
     dragData = null;
   });
 }
