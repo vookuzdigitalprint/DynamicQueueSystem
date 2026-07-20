@@ -5,6 +5,7 @@ import {
   moveToDesigner,
   moveBetweenDesigners,
   toggleDesigner,
+  returnToPool,
 } from "../js/queueLogic.js";
 
 let dragData = null;
@@ -138,6 +139,7 @@ function wire(root) {
     const to = zone.dataset.drop;
     const { num, from } = dragData;
     if (from === "waiting" && to !== "waiting") moveToDesigner(num, to);
+    else if (from !== "waiting" && to === "waiting") returnToPool(num, from);
     else if (from !== "waiting" && to !== "waiting" && from !== to)
       moveBetweenDesigners(num, from, to);
     dragData = null;
