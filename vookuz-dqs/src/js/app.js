@@ -51,6 +51,7 @@ function renderHeader(sess) {
   header.innerHTML = `
     <div class="brand"><span class="dot"></span>VOOKUZ <span>DQS</span></div>
     <div class="head-right">
+      <button id="fs-btn" class="btn ghost" style="margin-right:8px;" title="Layar Penuh">⛶</button>
       ${right}
       ${isFirebase() ? '<span class="mode-tag">LIVE</span>' : '<span class="mode-tag">OFFLINE</span>'}
       <button class="theme-toggle" id="theme" title="Ganti tema">
@@ -59,6 +60,22 @@ function renderHeader(sess) {
       <button class="btn ghost" id="logout">Keluar</button>
     </div>
   `;
+
+  // Attach Fullscreen event listener
+  const fsBtn = header.querySelector("#fs-btn");
+  if (fsBtn) {
+    fsBtn.onclick = () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock("landscape").catch(e => console.log("Orientation lock failed:", e));
+          }
+        }).catch(e => console.warn(e));
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+    };
+  }
   header.querySelector("#logout").onclick = async () => {
     await logout();
     render();
@@ -122,23 +139,6 @@ function paint() {
 }
 
 subscribe(() => paint());
-
-const fsBtn = document.getElementById("fs-btn");
-if (fsBtn) {
-  fsBtn.onclick = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        if (screen.orientation && screen.orientation.lock) {
-          screen.orientation.lock("landscape").catch(e => console.log("Orientation lock failed:", e));
-        }
-      }).catch(e => console.warn(e));
-      fsBtn.innerHTML = "⛶ KELUAR FULLSCREEN";
-    } else {
-      if (document.exitFullscreen) document.exitFullscreen();
-      fsBtn.innerHTML = "⛶ FULLSCREEN";
-    }
-  };
-}
 
 (async () => {
   render();
