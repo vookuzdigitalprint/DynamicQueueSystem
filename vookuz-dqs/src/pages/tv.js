@@ -58,6 +58,7 @@ function showOverlay(root, b) {
 }
 
 let currentUtterance = null;
+let watchdogTimer = null;
 
 function processAudio() {
   if (speaking || !audioQueue.length) return;
@@ -67,23 +68,27 @@ function processAudio() {
     `Nomor antrian ${terbilang(b.queue_number)}. Silakan menuju ke ${namaTerbilang(b.designer_name)}.`
   );
   
-  // Store globally to prevent Garbage Collection from cutting off audio
-  currentUtterance = u;
+  window.currentUtterance = u;
 
   u.lang = "id-ID";
-  u.onend = () => { speaking = false; processAudio(); };
-  u.onerror = (e) => { 
-    console.warn("Audio error:", e);
+  
+  const cleanup = () => {
+    clearTimeout(watchdogTimer);
     speaking = false;
     processAudio();
   };
+
+  u.onend = cleanup;
+  u.onerror = (e) => { 
+    console.warn("Audio error:", e);
+    cleanup();
+  };
   
-  // Anti-stuck watchdog
-  setTimeout(() => {
+  clearTimeout(watchdogTimer);
+  watchdogTimer = setTimeout(() => {
     if (speaking) {
-      speaking = false;
       window.speechSynthesis.cancel();
-      processAudio();
+      cleanup();
     }
   }, 15000);
 
