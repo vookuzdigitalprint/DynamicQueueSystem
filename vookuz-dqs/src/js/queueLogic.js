@@ -145,3 +145,19 @@ export function returnToPool(number, fromId) {
     return { ...s, waiting_pool: [...(s.waiting_pool || []), number], designers };
   });
 }
+
+export function deleteNumber(number, fromId) {
+  setState((s) => {
+    if (fromId === "waiting") {
+      return { ...s, waiting_pool: (s.waiting_pool || []).filter((x) => x !== number) };
+    }
+    const d = s.designers[fromId];
+    if (!d) return s;
+    const queue = (d.queue || []).filter((x) => x !== number);
+    const processing = d.current_processing === number ? null : d.current_processing;
+    return {
+      ...s,
+      designers: { ...s.designers, [fromId]: { ...d, queue, current_processing: processing } },
+    };
+  });
+}
