@@ -123,6 +123,23 @@ function paint() {
 
 subscribe(() => paint());
 
+const fsBtn = document.getElementById("fs-btn");
+if (fsBtn) {
+  fsBtn.onclick = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock("landscape").catch(e => console.log("Orientation lock failed:", e));
+        }
+      }).catch(e => console.warn(e));
+      fsBtn.innerHTML = "⛶ KELUAR FULLSCREEN";
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+      fsBtn.innerHTML = "⛶ FULLSCREEN";
+    }
+  };
+}
+
 (async () => {
   render();
   initStore().catch((e) => console.warn("Firebase off, mode mock:", e));
