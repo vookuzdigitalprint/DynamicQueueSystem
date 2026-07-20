@@ -112,7 +112,23 @@ body {
 
 .pool-tools { display: flex; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); background: var(--surface); }
 .pool-tools input { flex: 1; min-width: 0; padding: 12px 14px; border: 2px solid var(--line-strong); border-radius: var(--radius-sm); font-size: 18px; font-weight: 700; background: var(--surface); color: var(--ink); transition: border-color 0.15s, box-shadow 0.15s; }
-.pool-tools input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px rgba(79,70,229,.15); }
+.pool-tools input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+.trash-zone {
+  margin-top: 12px;
+  padding: 12px;
+  border: 2px dashed rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.05);
+  color: #ef4444;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.trash-zone:hover, .trash-zone:has(.dragging) {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
 .pool-tools .btn { padding: 12px 18px; font-size: 20px; font-weight: 800; border-radius: var(--radius-sm); line-height: 1; }
 .btn.sm { padding: 7px 11px; font-size: 13px; }
 .dcol.inactive { opacity: .65; }
