@@ -32,7 +32,7 @@ export function renderTV(root) {
 
 function handleBroadcast(s, root) {
   const b = s.broadcast_trigger;
-  if (!b || b === lastBroadcast) return;
+  if (!b || (lastBroadcast && b.timestamp === lastBroadcast.timestamp)) return;
   lastBroadcast = b;
   audioQueue.push(b);
   showOverlay(root, b);
