@@ -32,7 +32,16 @@ export function renderTV(root) {
 
 function handleBroadcast(s, root) {
   const b = s.broadcast_trigger;
-  if (!b || (lastBroadcast && b.timestamp === lastBroadcast.timestamp)) return;
+  if (!b) return;
+
+  // Ignore the initial stale broadcast on page load to prevent autoplay blocking deadlocks
+  if (lastBroadcast == null) {
+    lastBroadcast = b;
+    return;
+  }
+
+  if (b.timestamp === lastBroadcast.timestamp) return;
+
   lastBroadcast = b;
   audioQueue.push(b);
   showOverlay(root, b);
@@ -57,6 +66,21 @@ function processAudio() {
   );
   u.lang = "id-ID";
   u.onend = () => { speaking = false; processAudio(); };
+  u.onerror = (e) => { 
+    console.warn("Audio error:", e);
+    speaking = false;
+    processAudio();
+  };
+  
+  // Anti-stuck watchdog
+  setTimeout(() => {
+    if (speaking) {
+      speaking = false;
+      window.speechSynthesis.cancel();
+      processAudio();
+    }
+  }, 15000);
+
   window.speechSynthesis.speak(u);
 }
 
