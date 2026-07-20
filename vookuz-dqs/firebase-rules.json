@@ -1,0 +1,29 @@
+{
+  "rules": {
+    "shop_status": { ".read": true, ".write": false },
+    "waiting_pool": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "designers": {
+      ".read": true,
+      "$designerId": {
+        ".write": "auth != null && (root.child('admins').child(auth.uid).val() == true || auth.token.email.matches('admin@.*') || auth.token.email.matches('owner@.*'))",
+        "current_processing": {
+          ".write": "auth != null && (auth.token.email.matches('admin@.*') || auth.token.email.matches('owner@.*') || auth.token.email.matches('designer' + $designerId.slice(-1) + '@.*'))"
+        },
+        "queue": {
+          ".write": "auth != null && (auth.token.email.matches('admin@.*') || auth.token.email.matches('owner@.*') || auth.token.email.matches('designer' + $designerId.slice(-1) + '@.*'))"
+        },
+        "status": {
+          ".write": "auth != null && (auth.token.email.matches('admin@.*') || auth.token.email.matches('owner@.*'))"
+        },
+        "name": { ".write": false }
+      }
+    },
+    "broadcast_trigger": {
+      ".read": true,
+      ".write": "auth != null && (auth.token.email.matches('admin@.*') || auth.token.email.matches('owner@.*') || auth.token.email.matches('designer[1-5]@.*'))"
+    }
+  }
+}

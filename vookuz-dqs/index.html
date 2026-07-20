@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vookuz Dynamic Queue System (DQS)</title>
+  <link rel="stylesheet" href="src/css/main.css" />
+</head>
+<body>
+  <header id="app-header">
+    <div class="brand">VOOKUZ <span>DQS</span></div>
+    <nav id="role-switcher">
+      <button data-role="admin" class="active">Admin</button>
+      <button data-role="designer">Designer</button>
+      <button data-role="tv">TV Display</button>
+      <button data-role="owner">Owner</button>
+    </nav>
+  </header>
+
+  <main id="app-root"></main>
+
+  <footer id="app-footer">
+    &copy; Vookuz &mdash; Dynamic Queue System
+  </footer>
+
+  <script>
+    window.addEventListener("error", (e) => {
+      const r = document.getElementById("app-root");
+      if (r) r.innerHTML = '<pre style="color:#d6392e;white-space:pre-wrap;padding:16px;">'
+        + (e.message || e.error) + "\n" + (e.filename || "") + ":" + (e.lineno || "")
+        + '</pre>';
+    });
+    window.addEventListener("unhandledrejection", (e) => {
+      const r = document.getElementById("app-root");
+      if (r) r.innerHTML = '<pre style="color:#d6392e;white-space:pre-wrap;padding:16px;">'
+        + "Promise: " + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</pre>';
+    });
+  </script>
+  <script type="module" src="src/js/app.js"></script>
+</body>
+</html>

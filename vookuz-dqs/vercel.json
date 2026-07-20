@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/fb/:match*",
+      "destination": "https://vookuzdqs-default-rtdb.asia-southeast1.firebasedatabase.app/:match*"
+    }
+  ]
+}

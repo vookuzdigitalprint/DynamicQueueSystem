@@ -1,0 +1,116 @@
+import { subscribe, getState, initStore } from "./store.js";
+import { getSession, logout } from "./auth.js";
+import { isFirebase } from "./backend.js";
+import { renderLogin } from "../pages/login.js";
+import { mountAdmin, paintAdmin } from "../pages/admin.js";
+import { renderDesigner } from "../pages/designer.js";
+import { renderTV } from "../pages/tv.js";
+import { renderOwner } from "../pages/owner.js";
+
+const root = document.getElementById("app-root");
+const header = document.getElementById("app-header");
+const footer = document.getElementById("app-footer");
+
+if (localStorage.getItem("vookuz_theme") === "dark") {
+  document.body.classList.add("dark");
+}
+
+function render() {
+  const sess = getSession();
+
+  if (!sess) {
+    header.style.display = "none";
+    footer.style.display = "none";
+    renderLogin(root, afterLogin);
+    return;
+  }
+
+  header.style.display = "flex";
+  footer.style.display = "block";
+  renderHeader(sess);
+
+  if (sess.role === "tv") {
+    document.body.classList.add("tv-mode");
+    setupTvHeader(header, footer);
+  } else {
+    document.body.classList.remove("tv-mode");
+  }
+
+  if (sess.role === "admin") mountAdmin(root, sess);
+  else if (sess.role === "designer") renderDesigner(root, sess);
+  else if (sess.role === "tv") renderTV(root);
+  else if (sess.role === "owner") renderOwner(root, sess);
+}
+
+function renderHeader(sess) {
+  const right =
+    sess.role === "owner"
+      ? `<span class="who">${sess.label} · READ ONLY</span>`
+      : `<span class="who">${sess.label}</span>`;
+  const isDark = document.body.classList.contains("dark");
+  header.innerHTML = `
+    <div class="brand"><span class="dot"></span>VOOKUZ <span>DQS</span></div>
+    <div class="head-right">
+      ${right}
+      ${isFirebase() ? '<span class="mode-tag">LIVE</span>' : '<span class="mode-tag">OFFLINE</span>'}
+      <button class="theme-toggle" id="theme" title="Ganti tema">
+        ${isDark ? sunSvg() : moonSvg()}
+      </button>
+      <button class="btn ghost" id="logout">Keluar</button>
+    </div>
+  `;
+  header.querySelector("#logout").onclick = async () => {
+    await logout();
+    render();
+  };
+  header.querySelector("#theme").onclick = () => {
+    const dark = document.body.classList.toggle("dark");
+    localStorage.setItem("vookuz_theme", dark ? "dark" : "light");
+    render();
+  };
+}
+
+function moonSvg() {
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
+}
+function sunSvg() {
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>`;
+}
+
+function afterLogin() {
+  render();
+}
+
+let tvHideTimer = null;
+function setupTvHeader(header, footer) {
+  header.classList.add("tv-hidden");
+  footer.classList.add("tv-hidden");
+  const show = () => {
+    header.classList.remove("tv-hidden");
+    footer.classList.remove("tv-hidden");
+    clearTimeout(tvHideTimer);
+    tvHideTimer = setTimeout(() => {
+      header.classList.add("tv-hidden");
+      footer.classList.add("tv-hidden");
+    }, 2500);
+  };
+  document.onmousemove = show;
+  document.ontouchstart = show;
+  show();
+}
+
+function paint() {
+  const sess = getSession();
+  if (!sess) return;
+  if (sess.role === "admin") paintAdmin(root);
+  else if (sess.role === "designer") renderDesigner(root, sess);
+  else if (sess.role === "tv") renderTV(root);
+  else if (sess.role === "owner") renderOwner(root, sess);
+}
+
+subscribe(() => paint());
+
+(async () => {
+  render();
+  initStore().catch((e) => console.warn("Firebase off, mode mock:", e));
+})();
