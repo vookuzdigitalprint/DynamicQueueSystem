@@ -102,6 +102,19 @@ function setupTvHeader(header, footer) {
 function paint() {
   const sess = getSession();
   if (!sess) return;
+  
+  // Update header badge dynamically
+  const tag = document.querySelector(".mode-tag");
+  if (tag) {
+    if (isFirebase()) {
+      tag.textContent = "LIVE";
+      tag.style.background = "#28a745";
+    } else {
+      tag.textContent = "OFFLINE";
+      tag.style.background = "#d6392e";
+    }
+  }
+
   if (sess.role === "admin") paintAdmin(root);
   else if (sess.role === "designer") renderDesigner(root, sess);
   else if (sess.role === "tv") renderTV(root);
