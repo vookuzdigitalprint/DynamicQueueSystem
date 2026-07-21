@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=1280" />
   <title>Vookuz Dynamic Queue System (DQS)</title>
   <link rel="stylesheet" href="src/css/main.css" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-512.png" />
 </head>
 <body>
   <header id="app-header">
@@ -36,6 +38,50 @@
       const r = document.getElementById("app-root");
       if (r) r.innerHTML = '<pre style="color:#d6392e;white-space:pre-wrap;padding:16px;">'
         + "Promise: " + (e.reason && e.reason.message ? e.reason.message : e.reason) + '</pre>';
+    });
+
+    // PWA Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(e => console.log('SW ref fail:', e));
+      });
+    }
+
+    // PWA Install Prompt Logic
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Prevent the mini-infobar from appearing on mobile
+      e.preventDefault();
+      // Stash the event so it can be triggered later.
+      deferredPrompt = e;
+      
+      // If we are not already in standalone mode, show our custom install button
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        let installBtn = document.getElementById('pwa-install-btn');
+        if (!installBtn) {
+          installBtn = document.createElement('button');
+          installBtn.id = 'pwa-install-btn';
+          installBtn.className = 'btn accent';
+          installBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border-radius: 30px; padding: 12px 24px; font-weight:bold;';
+          installBtn.innerHTML = '⬇️ INSTALL APLIKASI';
+          document.body.appendChild(installBtn);
+          
+          installBtn.addEventListener('click', async () => {
+            installBtn.style.display = 'none';
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            deferredPrompt = null;
+          });
+        } else {
+          installBtn.style.display = 'block';
+        }
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      const btn = document.getElementById('pwa-install-btn');
+      if (btn) btn.style.display = 'none';
+      deferredPrompt = null;
     });
   </script>
   <script type="module" src="src/js/app.js"></script>
