@@ -62,8 +62,8 @@
           installBtn = document.createElement('button');
           installBtn.id = 'pwa-install-btn';
           installBtn.className = 'btn accent';
-          installBtn.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border-radius: 30px; padding: 12px 24px; font-weight:bold;';
-          installBtn.innerHTML = '⬇️ INSTALL APLIKASI';
+          installBtn.style.cssText = 'position:fixed; top:20px; left:50%; transform:translateX(-50%); z-index:9999; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border-radius: 30px; padding: 12px 24px; font-weight:bold; display:flex; align-items:center; gap:8px;';
+          installBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> INSTALL APLIKASI';
           document.body.appendChild(installBtn);
           
           installBtn.addEventListener('click', async () => {
