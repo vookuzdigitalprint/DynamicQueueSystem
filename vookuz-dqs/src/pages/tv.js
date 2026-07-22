@@ -76,19 +76,51 @@ function showOverlay(root, b) {
 
 let currentUtterance = null;
 let watchdogTimer = null;
+let audioCtx = null;
 
-function processAudio() {
-  if (speaking || !audioQueue.length) return;
-  const b = audioQueue.shift();
-  speaking = true;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playChime() {
+  try {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+
+    const osc1 = ctx.createOscillator();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(880, now);
+    osc1.connect(gain);
+    osc1.start(now);
+    osc1.stop(now + 0.15);
+
+    const osc2 = ctx.createOscillator();
+    osc2.type = "sine";
+    osc2.frequency.setValueAtTime(1100, now + 0.15);
+    osc2.connect(gain);
+    osc2.start(now + 0.15);
+    osc2.stop(now + 0.45);
+    return new Promise((resolve) => setTimeout(resolve, 500));
+  } catch (e) {
+    return Promise.resolve();
+  }
+}
+
+function speakBroadcast(b) {
   const u = new SpeechSynthesisUtterance(
     `Nomor antrian ${terbilang(b.queue_number)}. Silakan menuju ke ${namaTerbilang(b.designer_name)}.`
   );
-  
+
   window.currentUtterance = u;
 
   u.lang = "id-ID";
-  
+  u.rate = 1.05;
+
   const cleanup = () => {
     clearTimeout(watchdogTimer);
     speaking = false;
@@ -96,11 +128,11 @@ function processAudio() {
   };
 
   u.onend = cleanup;
-  u.onerror = (e) => { 
+  u.onerror = (e) => {
     console.warn("Audio error:", e);
     cleanup();
   };
-  
+
   clearTimeout(watchdogTimer);
   watchdogTimer = setTimeout(() => {
     if (speaking) {
@@ -110,6 +142,13 @@ function processAudio() {
   }, 15000);
 
   window.speechSynthesis.speak(u);
+}
+
+function processAudio() {
+  if (speaking || !audioQueue.length) return;
+  const b = audioQueue.shift();
+  speaking = true;
+  playChime().then(() => speakBroadcast(b));
 }
 
 function terbilang(n) {
