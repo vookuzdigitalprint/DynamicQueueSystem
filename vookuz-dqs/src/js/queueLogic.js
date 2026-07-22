@@ -248,7 +248,7 @@ export function selfAdd(designerId, number) {
     let queue = [...(d.queue || [])];
     if (current_processing == null) current_processing = item;
     else queue.push(item);
-    return { ...s, designers: { ...s.designers, [designerId]: { ...d, queue, current_processing } } };
+    return { ...s, designers: { ...s.designers, [designerId]: { ...d, queue, current_processing } }, offline_input: (s.offline_input || 0) + 1 };
   });
   return true;
 }
@@ -339,7 +339,7 @@ export function addWA(designerId, waNumber) {
     let wa_queue = [...(d.wa_queue || [])];
     if (wa_processing == null) wa_processing = item;
     else wa_queue.push(item);
-    return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_queue, wa_processing } } };
+    return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_queue, wa_processing } }, online_input: (s.online_input || 0) + 1 };
   });
   return true;
 }

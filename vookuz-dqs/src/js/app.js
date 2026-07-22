@@ -197,19 +197,14 @@ function showReport() {
   const offDel = s.offline_delete || 0;
   const onIn = s.online_input || 0;
   const onDel = s.online_delete || 0;
-  const offNet = offIn - offDel;
-  const onNet = onIn - onDel;
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.innerHTML = `
     <div class="modal-box">
       <div class="modal-head">Laporan</div>
       <div class="modal-body">
-        <div class="report-line"><span class="report-label">Admin input</span><span class="report-val">${offIn + onIn}</span></div>
-        <div class="report-line"><span class="report-label">Admin hapus</span><span class="report-val">${offDel + onDel}</span></div>
-        <div class="report-divider"></div>
-        <div class="report-line"><span class="report-label">Sisa offline</span><span class="report-val">${offNet}</span></div>
-        <div class="report-line"><span class="report-label">Sisa online</span><span class="report-val">${onNet}</span></div>
+        <div class="report-line"><span class="report-label">Antrian offline</span><span class="report-val">${offIn - offDel}</span></div>
+        <div class="report-line"><span class="report-label">Antrian online</span><span class="report-val">${onIn - onDel}</span></div>
       </div>
       <div class="modal-foot"><button class="btn" id="report-close">Tutup</button></div>
     </div>
