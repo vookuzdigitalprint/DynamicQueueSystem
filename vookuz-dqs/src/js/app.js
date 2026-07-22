@@ -48,11 +48,13 @@ function renderHeader(sess) {
       ? `<span class="who" id="who-label">${sess.label} · READ ONLY</span>`
       : `<span class="who" id="who-label">${sess.label}</span>`;
   const isDark = document.body.classList.contains("dark");
+  const isOwner = sess.role === "owner";
   header.innerHTML = `
     <div class="brand"><span class="dot"></span>VOOKUZ <span>DQS</span></div>
     <div class="head-search"><input type="text" id="search-num" placeholder="Cari nomor..." spellcheck="false" /></div>
     <div class="head-right">
       <button id="fs-btn" class="btn ghost" style="margin-right:8px;" title="Layar Penuh">⛶</button>
+      ${isOwner ? '<button class="btn ghost" id="report-btn">Laporan</button>' : ''}
       ${right}
       ${isFirebase() ? '<span class="mode-tag">LIVE</span>' : '<span class="mode-tag">OFFLINE</span>'}
       <button class="theme-toggle" id="theme" title="Ganti tema">
@@ -86,6 +88,8 @@ function renderHeader(sess) {
     localStorage.setItem("vookuz_theme", dark ? "dark" : "light");
     render();
   };
+  const reportBtn = header.querySelector("#report-btn");
+  if (reportBtn) reportBtn.onclick = showReport;
   wireSearch();
 }
 
@@ -185,6 +189,34 @@ function paint() {
   else if (sess.role === "tv") renderTV(root);
   else if (sess.role === "owner") renderOwner(root, sess);
   requestAnimationFrame(() => applySearch());
+}
+
+function showReport() {
+  const s = getState();
+  const offIn = s.offline_input || 0;
+  const offDel = s.offline_delete || 0;
+  const onIn = s.online_input || 0;
+  const onDel = s.online_delete || 0;
+  const offNet = offIn - offDel;
+  const onNet = onIn - onDel;
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `
+    <div class="modal-box">
+      <div class="modal-head">Laporan</div>
+      <div class="modal-body">
+        <div class="report-line"><span class="report-label">Admin input</span><span class="report-val">${offIn + onIn}</span></div>
+        <div class="report-line"><span class="report-label">Admin hapus</span><span class="report-val">${offDel + onDel}</span></div>
+        <div class="report-divider"></div>
+        <div class="report-line"><span class="report-label">Sisa offline</span><span class="report-val">${offNet}</span></div>
+        <div class="report-line"><span class="report-label">Sisa online</span><span class="report-val">${onNet}</span></div>
+      </div>
+      <div class="modal-foot"><button class="btn" id="report-close">Tutup</button></div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  overlay.querySelector("#report-close").onclick = () => overlay.remove();
+  overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
 }
 
 subscribe(() => paint());

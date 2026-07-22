@@ -32,6 +32,10 @@ export function createEmptyState() {
     },
     broadcast_trigger: null,
     wa_flash_triggers: [],
+    offline_input: 0,
+    offline_delete: 0,
+    online_input: 0,
+    online_delete: 0,
   };
 }
 

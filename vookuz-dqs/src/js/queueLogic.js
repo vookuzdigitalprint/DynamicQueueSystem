@@ -52,7 +52,7 @@ export function addToDesignPool(number) {
   if (!Number.isInteger(n) || n < 1 || n > 100) return false;
   setState((s) => {
     if (offlineNumberExists(s, n)) return s;
-    return { ...s, design_pool: [...(s.design_pool || []), { v: n, p: "design" }] };
+    return { ...s, design_pool: [...(s.design_pool || []), { v: n, p: "design" }], offline_input: (s.offline_input || 0) + 1 };
   });
   return true;
 }
@@ -62,7 +62,7 @@ export function addToCetakPool(number) {
   if (!Number.isInteger(n) || n < 1 || n > 100) return false;
   setState((s) => {
     if (offlineNumberExists(s, n)) return s;
-    return { ...s, cetak_pool: [...(s.cetak_pool || []), { v: n, p: "cetak" }] };
+    return { ...s, cetak_pool: [...(s.cetak_pool || []), { v: n, p: "cetak" }], offline_input: (s.offline_input || 0) + 1 };
   });
   return true;
 }
@@ -73,7 +73,7 @@ export function addWAtoDesignPool(wa) {
   const padded = raw.padStart(4, "0");
   setState((s) => {
     if (hasItem(s.design_pool, padded)) return s;
-    return { ...s, design_pool: [...(s.design_pool || []), { v: padded, p: "design", w: true }] };
+    return { ...s, design_pool: [...(s.design_pool || []), { v: padded, p: "design", w: true }], online_input: (s.online_input || 0) + 1 };
   });
   return true;
 }
@@ -84,7 +84,7 @@ export function addWAtoCetakPool(wa) {
   const padded = raw.padStart(4, "0");
   setState((s) => {
     if (hasItem(s.cetak_pool, padded)) return s;
-    return { ...s, cetak_pool: [...(s.cetak_pool || []), { v: padded, p: "cetak", w: true }] };
+    return { ...s, cetak_pool: [...(s.cetak_pool || []), { v: padded, p: "cetak", w: true }], online_input: (s.online_input || 0) + 1 };
   });
   return true;
 }
@@ -296,21 +296,31 @@ export function returnWAToCetak(waVal, fromId) {
 export function deleteNumber(itemVal, fromId) {
   setState((s) => {
     if (fromId === "design_pool" || fromId === "cetak_pool") {
-      return { ...s, [fromId]: (s[fromId] || []).filter((x) => x.v !== itemVal) };
+      const deleted = (s[fromId] || []).find((x) => x.v === itemVal);
+      const isWAitem = deleted && deleted.w === true;
+      const remaining = (s[fromId] || []).filter((x) => x.v !== itemVal);
+      if (remaining.length === (s[fromId] || []).length) return s;
+      if (isWAitem) return { ...s, [fromId]: remaining, online_delete: (s.online_delete || 0) + 1 };
+      return { ...s, [fromId]: remaining, offline_delete: (s.offline_delete || 0) + 1 };
     }
     if (fromId === "waiting" || fromId === "pool") {
-      return { ...s, design_pool: (s.design_pool || []).filter((x) => x.v !== itemVal) };
+      const deleted = (s.design_pool || []).find((x) => x.v === itemVal);
+      const isWAitem = deleted && deleted.w === true;
+      const remaining = (s.design_pool || []).filter((x) => x.v !== itemVal);
+      if (remaining.length === (s.design_pool || []).length) return s;
+      if (isWAitem) return { ...s, design_pool: remaining, online_delete: (s.online_delete || 0) + 1 };
+      return { ...s, design_pool: remaining, offline_delete: (s.offline_delete || 0) + 1 };
     }
     const d = s.designers[fromId];
     if (!d) return s;
     const q = without(d.queue, itemVal);
     const p = d.current_processing && d.current_processing.v === itemVal ? null : d.current_processing;
     if (q.length !== (d.queue || []).length || p !== d.current_processing) {
-      return { ...s, designers: { ...s.designers, [fromId]: { ...d, queue: q, current_processing: p } } };
+      return { ...s, designers: { ...s.designers, [fromId]: { ...d, queue: q, current_processing: p } }, offline_delete: (s.offline_delete || 0) + 1 };
     }
     const wq = (d.wa_queue || []).filter((x) => x.v !== itemVal);
     const wp = d.wa_processing && d.wa_processing.v === itemVal ? null : d.wa_processing;
-    return { ...s, designers: { ...s.designers, [fromId]: { ...d, wa_queue: wq, wa_processing: wp } } };
+    return { ...s, designers: { ...s.designers, [fromId]: { ...d, wa_queue: wq, wa_processing: wp } }, online_delete: (s.online_delete || 0) + 1 };
   });
 }
 
@@ -378,7 +388,7 @@ export function deleteWAItem(designerId, itemVal) {
     const d = s.designers[designerId];
     const queue = (d.wa_queue || []).filter((x) => x.v !== itemVal);
     const processing = d.wa_processing && d.wa_processing.v === itemVal ? null : d.wa_processing;
-    return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_queue: queue, wa_processing: processing } } };
+    return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_queue: queue, wa_processing: processing } }, online_delete: (s.online_delete || 0) + 1 };
   });
 }
 
