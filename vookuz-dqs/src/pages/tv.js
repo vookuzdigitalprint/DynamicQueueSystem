@@ -11,13 +11,30 @@ export function renderTV(root) {
 
   const cards = DESIGNERS.map((d) => {
     const st = s.designers[d.id];
-    let body;
-    if (st.status === "INACTIVE") body = `<div class="tv-off">TUTUP</div>`;
-    else if (st.current_processing == null) body = `<div class="tv-empty">KOSONG</div>`;
-    else body = `<div class="tv-num">${st.current_processing}</div>`;
+    let offlineBody;
+    if (st.status === "INACTIVE") offlineBody = `<div class="tv-off">TUTUP</div>`;
+    else if (st.current_processing == null) offlineBody = `<div class="tv-empty">KOSONG</div>`;
+    else {
+      const p = st.current_processing;
+      const colorCls = p.p === "cetak" ? "cetak" : "design";
+      offlineBody = `<div class="tv-num ${colorCls}">${p.v}</div>`;
+    }
+    let waBody;
+    if (st.status === "INACTIVE") waBody = ``;
+    else {
+      const waAll = [];
+      if (st.wa_processing) waAll.push(st.wa_processing);
+      if (st.wa_queue) waAll.push(...st.wa_queue);
+      if (waAll.length === 0) waBody = `<div class="tv-wa-empty">—</div>`;
+      else waBody = `<div class="tv-wa-grid">${waAll.map((n) => `<span class="tv-wa-box${n.p === "cetak" ? " cetak" : " design"}">${n.v}</span>`).join("")}</div>`;
+    }
     return `<div class="tv-card ${st.status === "INACTIVE" ? "inactive" : ""}">
       <div class="tv-name">${d.name}</div>
-      <div class="tv-body">${body}</div>
+      <div class="tv-body">
+        <div class="tv-section tv-section-offline">${offlineBody}</div>
+        <div class="tv-section-divider"></div>
+        <div class="tv-section tv-section-wa">${waBody}</div>
+      </div>
     </div>`;
   }).join("");
 

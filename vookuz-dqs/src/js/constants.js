@@ -31,6 +31,7 @@ export function createEmptyState() {
       designer_5: { name: "Operator 5", status: "ACTIVE", current_processing: null, queue: [], wa_processing: null, wa_queue: [] },
     },
     broadcast_trigger: null,
+    wa_flash_triggers: [],
   };
 }
 
@@ -50,5 +51,6 @@ export function createInitialState() {
       designer_5: { name: "Operator 5", status: "ACTIVE", current_processing: null, queue: [], wa_processing: null, wa_queue: [] },
     },
     broadcast_trigger: null,
+    wa_flash_triggers: [],
   };
 }

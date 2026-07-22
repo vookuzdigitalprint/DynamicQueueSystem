@@ -10,7 +10,7 @@ import { createInitialState, createEmptyState } from "./constants.js";
 const listeners = new Set();
 let cache = createInitialState();
 let ready = false;
-let writing = false;
+let writeCount = 0;
 
 export async function initStore() {
   await connectFirebase();
@@ -22,7 +22,7 @@ export async function initStore() {
       notify();
     }
     listenAll((val) => {
-      if (writing) return;
+      if (writeCount > 0) return;
       if (JSON.stringify(cache) === JSON.stringify(val)) return;
       cache = val;
       notify();
@@ -39,6 +39,7 @@ export function getState() {
 export function setState(updater) {
   const next = typeof updater === "function" ? updater(cache) : updater;
   cache = next;
+  writeCount++;
   notify();
   persist(next);
 }
@@ -54,13 +55,12 @@ function notify() {
 
 async function persist(state) {
   if (backend.mode !== "firebase") return;
-  writing = true;
   try {
     await writeAll(state);
   } catch (e) {
     console.warn("Gagal tulis ke Firebase:", e);
   } finally {
-    writing = false;
+    writeCount--;
   }
 }
 

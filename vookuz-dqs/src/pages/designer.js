@@ -27,12 +27,14 @@ export function renderDesigner(root, sess) {
     .map((n) => `<div class="qnum${itemCls(n)}">${n.v}</div>`)
     .join("");
 
+  const flashTriggers = s.wa_flash_triggers || [];
   const waAll = [];
   if (d.wa_processing) waAll.push(d.wa_processing);
   if (d.wa_queue) waAll.push(...d.wa_queue);
-  const waItems = waAll.map((n) =>
-    `<div class="qnum wa${itemCls(n)}">${n.v}<span class="wa-del" data-wa-del="${n.v}">&times;</span></div>`
-  ).join("");
+  const waItems = waAll.map((n) => {
+    const flashing = flashTriggers.some((t) => t.designerId === id && t.itemVal === n.v);
+    return `<div class="qnum wa${itemCls(n)}${flashing ? " flash-blink" : ""}">${n.v}<span class="wa-del" data-wa-del="${n.v}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span></div>`;
+  }).join("");
 
   const oldInput = root.querySelector("#self-num");
   const wasFocused = oldInput && document.activeElement === oldInput;

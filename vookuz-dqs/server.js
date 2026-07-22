@@ -40,7 +40,11 @@ http
         res.writeHead(404);
         return res.end("Not found");
       }
-      res.writeHead(200, { "Content-Type": types[path.extname(file)] || "text/plain" });
+      const ext = path.extname(file);
+      const noCache = ext === ".html" || ext === ".js" || ext === ".css" ? "no-cache" : null;
+      const headers = { "Content-Type": types[ext] || "text/plain" };
+      if (noCache) headers["Cache-Control"] = noCache;
+      res.writeHead(200, headers);
       res.end(data);
     });
   })
