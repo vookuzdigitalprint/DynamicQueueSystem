@@ -1,0 +1,10 @@
+{
+  "name": "vookuz-dqs",
+  "version": "0.1.0",
+  "description": "Vookuz Dynamic Queue System (DQS) - front-end (mock store)",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "license": "MIT"
+}

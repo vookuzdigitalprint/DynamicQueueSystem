@@ -5,7 +5,7 @@ import {
   writeAll,
   listenAll,
 } from "./firebase.js";
-import { createInitialState } from "./constants.js";
+import { createInitialState, createEmptyState } from "./constants.js";
 
 const listeners = new Set();
 let cache = createInitialState();
@@ -73,6 +73,11 @@ export function designerCount(designer) {
   return (d.queue?.length || 0) + (d.current_processing != null ? 1 : 0);
 }
 
+export function waDesignerCount(designer) {
+  const d = cache.designers[designer];
+  return (d.wa_queue?.length || 0) + (d.wa_processing != null ? 1 : 0);
+}
+
 export function resetState() {
-  setState(createInitialState());
+  setState(createEmptyState());
 }

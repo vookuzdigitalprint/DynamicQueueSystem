@@ -45,11 +45,12 @@ function render() {
 function renderHeader(sess) {
   const right =
     sess.role === "owner"
-      ? `<span class="who">${sess.label} · READ ONLY</span>`
-      : `<span class="who">${sess.label}</span>`;
+      ? `<span class="who" id="who-label">${sess.label} · READ ONLY</span>`
+      : `<span class="who" id="who-label">${sess.label}</span>`;
   const isDark = document.body.classList.contains("dark");
   header.innerHTML = `
     <div class="brand"><span class="dot"></span>VOOKUZ <span>DQS</span></div>
+    <div class="head-search"><input type="text" id="search-num" placeholder="Cari nomor..." spellcheck="false" /></div>
     <div class="head-right">
       <button id="fs-btn" class="btn ghost" style="margin-right:8px;" title="Layar Penuh">⛶</button>
       ${right}
@@ -85,6 +86,53 @@ function renderHeader(sess) {
     localStorage.setItem("vookuz_theme", dark ? "dark" : "light");
     render();
   };
+  wireSearch();
+}
+
+// Search
+let searchValue = "";
+let searchTimer = null;
+
+function wireSearch() {
+  const input = document.getElementById("search-num");
+  if (!input) return;
+  input.value = searchValue;
+  input.oninput = () => {
+    searchValue = input.value.trim();
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => paint(), 200);
+  };
+}
+
+function applySearch() {
+  document.querySelectorAll(".search-hit").forEach((el) => el.classList.remove("search-hit"));
+  if (!searchValue) return;
+  const s = getState();
+  const q = searchValue;
+  // Check operators
+  for (const id in s.designers) {
+    const d = s.designers[id];
+    const found =
+      (d.current_processing && String(d.current_processing.v) === q) ||
+      (d.queue || []).some((x) => String(x.v) === q) ||
+      (d.wa_processing && String(d.wa_processing.v) === q) ||
+      (d.wa_queue || []).some((x) => String(x.v) === q);
+    if (found) {
+      const col = document.querySelector(`#col-${id}`) || document.querySelector(`[data-col="${id}"]`);
+      if (col) col.classList.add("search-hit");
+    }
+  }
+  // Check pools
+  const inDesign = (s.design_pool || []).some((x) => String(x.v) === q);
+  const inCetak = (s.cetak_pool || []).some((x) => String(x.v) === q);
+  if (inDesign) {
+    const el = document.querySelector("#pool-col-design_pool");
+    if (el) el.classList.add("search-hit");
+  }
+  if (inCetak) {
+    const el = document.querySelector("#pool-col-cetak_pool");
+    if (el) el.classList.add("search-hit");
+  }
 }
 
 function moonSvg() {
@@ -136,6 +184,7 @@ function paint() {
   else if (sess.role === "designer") renderDesigner(root, sess);
   else if (sess.role === "tv") renderTV(root);
   else if (sess.role === "owner") renderOwner(root, sess);
+  requestAnimationFrame(() => applySearch());
 }
 
 subscribe(() => paint());
