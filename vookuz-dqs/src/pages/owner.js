@@ -3,15 +3,9 @@ import { getState, designerCount, waDesignerCount } from "../js/store.js";
 
 let view = "tv";
 
-function itemClass(item) {
+function colorCls(item) {
   if (!item) return "";
-  const c = item.p === "cetak" ? " cetak-item" : " design-item";
-  return item.w === true ? " wa" + c : c;
-}
-
-function renderItem(item, cls = "") {
-  if (!item) return "";
-  return `<div class="qnum${itemClass(item)}${cls}">${item.v}</div>`;
+  return item.p === "cetak" ? " cetak-item" : " design-item";
 }
 
 export function renderOwner(root, sess) {
@@ -22,11 +16,11 @@ export function renderOwner(root, sess) {
       ${DESIGNERS.map((d) => `<button class="btn ghost ${view === d.id ? "active" : ""}" data-v="${d.id}">${d.name}</button>`).join("")}
     </div>`;
 
-  root.innerHTML = `<div class="owner-wrap"><div class="page-head"><h2 class="page-title">Owner Monitor</h2><div class="readonly-badge">READ ONLY</div></div>${nav}${body()}</div>`;
+  root.innerHTML = `<div class="owner-wrap"><div class="page-head"><h2 class="page-title">Owner Monitor</h2><div class="readonly-badge">READ ONLY</div></div>${nav}${body(root)}</div>`;
   wire(root);
 }
 
-function body() {
+function body(root) {
   const s = getState();
   if (view === "tv") return tvView(s);
   if (view === "admin") return adminView(s);
@@ -36,46 +30,82 @@ function body() {
 function tvView(s) {
   const cards = DESIGNERS.map((d) => {
     const st = s.designers[d.id];
-    const body = st.status === "INACTIVE" ? `<div class="tv-off">TUTUP</div>` :
-      !st.current_processing ? `<div class="tv-empty">KOSONG</div>` :
-      `<div class="tv-num">${st.current_processing.v}</div>`;
-    return `<div class="tv-card ${st.status === "INACTIVE" ? "inactive" : ""}"><div class="tv-name">${d.name}</div><div class="tv-body">${body}</div></div>`;
-  }).join("");
-  return `<div class="tv-grid static">${cards}</div>`;
-}
-
-function adminView(s) {
-  const cols = [
-    ...DESIGNERS.map((d) => {
-      const st = s.designers[d.id];
-      const processing = st.current_processing ? renderItem(st.current_processing, " processing") : "";
-      const queue = (st.queue || []).map((n) => renderItem(n)).join("");
+    let offlineBody;
+    if (st.status === "INACTIVE") offlineBody = `<div class="tv-off">TUTUP</div>`;
+    else if (st.current_processing == null) offlineBody = `<div class="tv-empty">KOSONG</div>`;
+    else {
+      const p = st.current_processing;
+      const c = p.p === "cetak" ? "cetak" : "design";
+      offlineBody = `<div class="tv-num ${c}">${p.v}</div>`;
+    }
+    let waBody;
+    if (st.status === "INACTIVE") waBody = ``;
+    else {
       const waAll = [];
       if (st.wa_processing) waAll.push(st.wa_processing);
       if (st.wa_queue) waAll.push(...st.wa_queue);
-      const waItems = waAll.map((n) => renderItem(n)).join("");
-      return `<div class="dcol ${st.status === "INACTIVE" ? "inactive" : ""}">
-        <div class="dcol-title">${d.name}</div>
-        <div class="dcol-meta"><span class="status ${st.status === "ACTIVE" ? "on" : "off"}">${st.status === "INACTIVE" ? "CUTI" : "AKTIF"}</span><span>${designerCount(d.id)}/5</span></div>
-        <div class="dcol-list">${processing}${queue || '<span class="empty">kosong</span>'}</div>
-        <div class="dcol-sub wa">WA</div>
-        <div class="dcol-list wa">${waItems || '<span class="empty">kosong</span>'}</div>
-      </div>`;
-    }),
-    `<div class="dcol"><div class="dcol-title">DESIGN <span class="pool-dot red"></span></div><div class="dcol-meta">${(s.design_pool || []).length} antrian</div><div class="dcol-list">${(s.design_pool || []).map((n) => renderItem(n)).join("") || '<span class="empty">kosong</span>'}</div></div>`,
-    `<div class="dcol"><div class="dcol-title">CETAK <span class="pool-dot blue"></span></div><div class="dcol-meta">${(s.cetak_pool || []).length} antrian</div><div class="dcol-list">${(s.cetak_pool || []).map((n) => renderItem(n)).join("") || '<span class="empty">kosong</span>'}</div></div>`,
-  ].join("");
-  return `<div class="admin-grid static">${cols}</div>`;
+      if (waAll.length === 0) waBody = `<div class="tv-wa-empty">—</div>`;
+      else waBody = `<div class="tv-wa-grid">${waAll.map((n) => `<span class="tv-wa-box${n.p === "cetak" ? " cetak" : " design"}">${n.v}</span>`).join("")}</div>`;
+    }
+    return `<div class="tv-card ${st.status === "INACTIVE" ? "inactive" : ""}">
+      <div class="tv-name">${d.name}</div>
+      <div class="tv-body">
+        <div class="tv-section tv-section-offline">${offlineBody}</div>
+        <div class="tv-section-divider"></div>
+        <div class="tv-section tv-section-wa">${waBody}</div>
+      </div>
+    </div>`;
+  }).join("");
+  return `<div class="tv-grid">${cards}</div>`;
+}
+
+function adminView(s) {
+  const cols = DESIGNERS.map((d) => {
+    const st = s.designers[d.id];
+    const count = designerCount(d.id);
+    const locked = st.status === "ACTIVE" && count >= 5;
+    const processing = st.current_processing
+      ? `<div class="qnum processing ${st.current_processing.p === "cetak" ? "cetak-item" : "design-item"}">${st.current_processing.v}</div>`
+      : "";
+    const queue = (st.queue || []).map((n) => `<div class="qnum ${n.p === "cetak" ? "cetak-item" : "design-item"}">${n.v}</div>`).join("");
+    const waAll = [];
+    if (st.wa_processing) waAll.push(st.wa_processing);
+    if (st.wa_queue) waAll.push(...st.wa_queue);
+    const waItems = waAll.map((n) => `<div class="qnum wa ${n.p === "cetak" ? "cetak-item" : "design-item"}">${n.v}</div>`).join("");
+    return `<div class="dcol-wrap${st.status === "INACTIVE" ? " inactive" : ""}">
+      <div class="dcol-title">${d.name}</div>
+      <div class="dcol-meta"><span class="status ${st.status === "ACTIVE" ? "on" : "off"}">${st.status === "INACTIVE" ? "CUTI" : locked ? "PENUH" : "AKTIF"}</span><span>${count}/5</span></div>
+      <div class="dcol-list" data-q="design">${processing}${queue || '<span class="empty">kosong</span>'}</div>
+      <div class="dcol-sub wa">WA</div>
+      <div class="dcol-list wa" data-q="wa">${waItems || '<span class="empty">kosong</span>'}</div>
+    </div>`;
+  }).join("");
+  const poolItem = (item, pool) => `<div class="qnum${item.w ? " wa" : ""}${item.p === "cetak" ? " cetak-item" : " design-item"}">${item.v}</div>`;
+  return `<div class="admin-grid" id="owner-admin-grid">
+    ${cols}
+    <div class="dcol pool-col" id="pool-col-design_pool">
+      <div class="dcol-title">DESIGN <span class="pool-dot red"></span></div>
+      <div class="dcol-meta">${(s.design_pool || []).length} antrian</div>
+      <div class="dcol-list">${(s.design_pool || []).map((n) => poolItem(n, "design_pool")).join("") || '<span class="empty">kosong</span>'}</div>
+    </div>
+    <div class="dcol pool-col" id="pool-col-cetak_pool">
+      <div class="dcol-title">CETAK <span class="pool-dot blue"></span></div>
+      <div class="dcol-meta">${(s.cetak_pool || []).length} antrian</div>
+      <div class="dcol-list">${(s.cetak_pool || []).map((n) => poolItem(n, "cetak_pool")).join("") || '<span class="empty">kosong</span>'}</div>
+    </div>
+  </div>`;
 }
 
 function designerView(s, id) {
   const d = s.designers[id];
-  const processing = d.current_processing ? renderItem(d.current_processing, " processing big") : "";
-  const queue = (d.queue || []).map((n) => renderItem(n)).join("");
+  const processing = d.current_processing
+    ? `<div class="qnum processing big${d.current_processing.p === "cetak" ? " cetak-item" : " design-item"}">${d.current_processing.v}</div>`
+    : "";
+  const queue = (d.queue || []).map((n) => `<div class="qnum${n.p === "cetak" ? " cetak-item" : " design-item"}">${n.v}</div>`).join("");
   const waAll = [];
   if (d.wa_processing) waAll.push(d.wa_processing);
   if (d.wa_queue) waAll.push(...d.wa_queue);
-  const waItems = waAll.map((n) => renderItem(n)).join("");
+  const waItems = waAll.map((n) => `<div class="qnum wa${n.p === "cetak" ? " cetak-item" : " design-item"}">${n.v}</div>`).join("");
   return `<div class="d-single-grid">
     <div class="dcol ${d.status === "INACTIVE" ? "inactive" : ""}">
       <div class="dcol-title">${d.name} — DESIGN</div>
