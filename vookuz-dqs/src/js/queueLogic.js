@@ -160,7 +160,7 @@ export function toggleDesigner(designerId) {
       const returned = [...(d.queue || [])];
       if (d.current_processing) returned.push(d.current_processing);
       design_pool = [...(s.design_pool || []), ...returned];
-      return { ...s, design_pool, designers: { ...s.designers, [designerId]: { ...d, status: "INACTIVE", current_processing: null, queue: [], wa_processing: null, wa_queue: [] } } };
+      return { ...s, design_pool, designers: { ...s.designers, [designerId]: { ...d, status: "INACTIVE", current_processing: null, queue: [] } } };
     }
     return { ...s, designers: { ...s.designers, [designerId]: { ...d, status: "ACTIVE" } } };
   });

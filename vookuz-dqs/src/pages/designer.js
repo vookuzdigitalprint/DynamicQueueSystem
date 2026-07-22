@@ -76,6 +76,7 @@ export function renderDesigner(root, sess) {
             <button class="btn ghost" id="req" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA DESIGN</button>
             <button class="btn ghost" id="req-cetak" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA CETAK</button>
           </div>
+          <div id="empty-toast" class="empty-toast"></div>
         </div>
         
         <div class="panel-box">
@@ -100,8 +101,22 @@ export function renderDesigner(root, sess) {
   root.querySelector("#call").onclick = () => callNumber(id);
   root.querySelector("#skip").onclick = () => skipNumber(id);
   root.querySelector("#finish").onclick = () => finishNumber(id);
-  root.querySelector("#req").onclick = () => requestFromPool(id);
-  root.querySelector("#req-cetak").onclick = () => requestFromCetak(id);
+  root.querySelector("#req").onclick = () => {
+    if (!(s.design_pool || []).length) { showToast(root); return; }
+    requestFromPool(id);
+  };
+  root.querySelector("#req-cetak").onclick = () => {
+    if (!(s.cetak_pool || []).length) { showToast(root); return; }
+    requestFromCetak(id);
+  };
+
+  function showToast(root) {
+    const el = root.querySelector("#empty-toast");
+    if (!el) return;
+    el.textContent = "antrian kosong";
+    el.classList.add("show");
+    setTimeout(() => { el.classList.remove("show"); }, 1500);
+  }
 
   // WA delete (delegated)
   root.querySelectorAll(".wa-del").forEach((el) => {

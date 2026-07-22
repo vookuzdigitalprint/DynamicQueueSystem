@@ -233,6 +233,10 @@ body {
 .d-selfadd-sm input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(79,70,229,.15); }
 .d-selfadd-sm .btn { padding: 8px 12px; font-size: 13px; border-radius: var(--radius-sm); }
 
+/* toast */
+.empty-toast { font-size: 12px; color: var(--muted); text-align: center; min-height: 20px; line-height: 20px; margin-top: 4px; opacity: 0; transition: opacity .2s; }
+.empty-toast.show { opacity: 1; }
+
 /* owner d-single-grid */
 .d-single-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
