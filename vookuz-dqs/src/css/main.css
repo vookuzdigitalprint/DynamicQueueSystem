@@ -191,6 +191,12 @@ body {
 .qnum.wa { position: relative; }
 .qnum.wa::after { content: "WA"; font-size: 8px; font-weight: 700; margin-left: 4px; opacity: .5; }
 .qnum.wa.wa-checked { opacity: .5; }
+.qnum.wa.wa-acc { position: relative; }
+.wa-acc-badge { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); font-size: 16px; font-weight: 900; color: #000; letter-spacing: 1px; cursor: pointer; z-index: 2; }
+.qnum.wa.wa-checked .wa-acc-badge { opacity: 1; }
+body.dark .wa-acc-badge { color: #fff; }
+.wa-acc-btn { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); cursor: pointer; font-size: 9px; font-weight: 700; opacity: .5; line-height: 1; transition: opacity .15s; }
+.wa-acc-btn:hover { opacity: 1; }
 .qnum.wa.wa-checked .wa-num { text-decoration: line-through; }
 .wa-cb { cursor: pointer; display: inline-flex; align-items: center; margin-right: 4px; opacity: .6; }
 .wa-cb:hover { opacity: 1; }
@@ -278,6 +284,11 @@ body {
 }
 .tv-overlay.hidden { display: none; }
 .legend-box { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; padding: 8px 12px; }
+.trash-zone {
+  border: 2px dashed rgba(239,68,68,.3); border-radius: 10px; padding: 18px; text-align: center;
+  font-size: 16px; color: #ef4444; opacity: .6; cursor: default; transition: all .2s;
+}
+.trash-zone.drag-over { opacity: 1; background: rgba(239,68,68,.12); border-color: #ef4444; }
 .design-btn { border-color: #dc2626 !important; color: #dc2626 !important; }
 .design-btn:hover { background: rgba(220,38,38,.08) !important; }
 .cetak-btn { border-color: #2563eb !important; color: #2563eb !important; }

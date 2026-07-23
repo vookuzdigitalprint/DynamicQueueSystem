@@ -410,6 +410,15 @@ export function toggleWACheck(designerId, itemVal) {
   });
 }
 
+export function toggleWAAcc(designerId, itemVal) {
+  setState((s) => {
+    const list = s.wa_acc || [];
+    const idx = list.findIndex((t) => t.designerId === designerId && t.itemVal === itemVal);
+    if (idx >= 0) return { ...s, wa_acc: list.filter((_, i) => i !== idx) };
+    return { ...s, wa_acc: [...list, { designerId, itemVal }] };
+  });
+}
+
 export function flashWAItem(designerId, itemVal) {
   setState((s) => {
     const list = s.wa_flash_triggers || [];

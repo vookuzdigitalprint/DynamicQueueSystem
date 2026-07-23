@@ -4,8 +4,6 @@ import {
   callNumber,
   skipNumber,
   finishNumber,
-  requestFromPool,
-  requestFromCetak,
   selfAdd,
   selfAddCetak,
   addWA,
@@ -29,8 +27,6 @@ export function renderDesigner(root, sess) {
 
   const count = designerCount(id);
   const waCount = waDesignerCount(id);
-  const empty = (d.queue || []).length === 0 && d.current_processing == null;
-  const waEmpty = (d.wa_queue || []).length === 0 && d.wa_processing == null;
 
   const itemCls = (n) => n.p === "cetak" ? " cetak-item" : " design-item";
   const processing = d.current_processing
@@ -42,16 +38,18 @@ export function renderDesigner(root, sess) {
 
   const flashTriggers = s.wa_flash_triggers || [];
   const checked = s.wa_checked || [];
+  const accList = s.wa_acc || [];
   const waAll = [];
   if (d.wa_processing) waAll.push(d.wa_processing);
   if (d.wa_queue) waAll.push(...d.wa_queue);
   const waItems = waAll.map((n) => {
     const flashing = flashTriggers.some((t) => t.designerId === id && t.itemVal === n.v);
     const chk = checked.some((t) => t.designerId === id && t.itemVal === n.v);
-    return `<div class="qnum wa${itemCls(n)}${flashing ? " flash-blink" : ""}${chk ? " wa-checked" : ""}">
+    const acc = accList.some((t) => t.designerId === id && t.itemVal === n.v);
+    return `<div class="qnum wa${itemCls(n)}${flashing ? " flash-blink" : ""}${chk ? " wa-checked" : ""}${acc ? " wa-acc" : ""}" draggable="true" data-wa="${n.v}">
+      ${acc ? '<span class="wa-acc-badge">ACC</span>' : ""}
       <span class="wa-cb" data-wa-cb="${n.v}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
       <span class="wa-num">${n.v}${n.name ? ` <span class="item-name">${n.name}</span>` : ""}</span>
-      <span class="wa-del" data-wa-del="${n.v}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
     </div>`;
   }).join("");
 
@@ -67,7 +65,7 @@ export function renderDesigner(root, sess) {
       <div class="designer-main">
         <!-- DESIGN QUEUE -->
         <div class="dcol ${d.status === "INACTIVE" ? "inactive" : ""}">
-          <div class="dcol-title">${d.name} — DESIGN</div>
+          <div class="dcol-title">${d.name} — OFFLINE</div>
           <div class="dcol-meta">
             <span class="status ${d.status === "ACTIVE" ? "on" : "off"}">${d.status === "INACTIVE" ? "CUTI" : "AKTIF"}</span>
             <span>${count}/5</span>
@@ -86,16 +84,13 @@ export function renderDesigner(root, sess) {
       </div>
       
       <div class="designer-sidebar">
-        <div class="panel-box">
-          <h3 class="panel-title"><span class="pool-dot red"></span> Aksi Design</h3>
-          <div class="panel-actions">
-            <button class="btn ok lg" id="call" ${d.status !== "ACTIVE" || (d.current_processing == null && (d.queue || []).length === 0) ? "disabled" : ""}>PANGGIL</button>
-            <button class="btn warn" id="skip" ${d.current_processing == null ? "disabled" : ""}>LEWATI</button>
-            <button class="btn danger" id="finish" ${d.current_processing == null ? "disabled" : ""}>SELESAI</button>
-            <button class="btn ghost design-btn" id="req" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA DESIGN</button>
-            <button class="btn ghost cetak-btn" id="req-cetak" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA CETAK</button>
-          </div>
-          <div id="empty-toast" class="empty-toast"></div>
+        <div class="panel-box legend-box">
+          <span class="legend-dot red"></span> design &nbsp; <span class="legend-dot blue"></span> cetak
+        </div>
+        <div class="panel-actions" style="margin-bottom:8px">
+          <button class="btn ok lg" id="call" ${d.status !== "ACTIVE" || (d.current_processing == null && (d.queue || []).length === 0) ? "disabled" : ""}>PANGGIL</button>
+          <button class="btn warn" id="skip" ${d.current_processing == null ? "disabled" : ""}>LEWATI</button>
+          <button class="btn danger" id="finish" ${d.current_processing == null ? "disabled" : ""}>SELESAI</button>
         </div>
         
         <div class="panel-box">
@@ -112,9 +107,7 @@ export function renderDesigner(root, sess) {
             <button class="btn accent cetak-btn" id="self-add-cetak">+</button>
           </div>
         </div>
-        <div class="panel-box legend-box">
-          <span class="legend-dot red"></span> design &nbsp; <span class="legend-dot blue"></span> cetak
-        </div>
+        <div class="trash-zone" id="designer-trash">🗑 Hapus</div>
       </div>
     </div>
   `;
@@ -123,27 +116,8 @@ export function renderDesigner(root, sess) {
   root.querySelector("#call").onclick = () => callNumber(id);
   root.querySelector("#skip").onclick = () => skipNumber(id);
   root.querySelector("#finish").onclick = () => finishNumber(id);
-  root.querySelector("#req").onclick = () => {
-    if (!(s.design_pool || []).length) { showToast(root); return; }
-    requestFromPool(id);
-  };
-  root.querySelector("#req-cetak").onclick = () => {
-    if (!(s.cetak_pool || []).length) { showToast(root); return; }
-    requestFromCetak(id);
-  };
 
-  function showToast(root) {
-    const el = root.querySelector("#empty-toast");
-    if (!el) return;
-    el.textContent = "antrian kosong";
-    el.classList.add("show");
-    setTimeout(() => { el.classList.remove("show"); }, 1500);
-  }
-
-  // WA delete + WA check (delegated)
-  root.querySelectorAll(".wa-del").forEach((el) => {
-    el.onclick = (e) => { e.stopPropagation(); deleteWAItem(id, el.dataset.waDel); };
-  });
+  // WA check (delegated)
   root.querySelectorAll(".wa-cb").forEach((el) => {
     el.onclick = (e) => { e.stopPropagation(); toggleWACheck(id, el.dataset.waCb); };
   });
@@ -183,4 +157,25 @@ export function renderDesigner(root, sess) {
   } else if (wasCetakFocused && cetakPoolInput) {
     cetakPoolInput.focus();
   }
+
+  // Trash zone drag-drop for WA items
+  const trashZone = root.querySelector("#designer-trash");
+  if (trashZone) {
+    trashZone.addEventListener("dragover", (e) => { e.preventDefault(); trashZone.classList.add("drag-over"); });
+    trashZone.addEventListener("dragleave", () => trashZone.classList.remove("drag-over"));
+    trashZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      trashZone.classList.remove("drag-over");
+      const wa = e.dataTransfer.getData("text/wa");
+      if (wa) deleteWAItem(id, wa);
+    });
+  }
+  // Make WA items set drag data
+  root.querySelectorAll(".qnum.wa[draggable]").forEach((el) => {
+    el.addEventListener("dragstart", (e) => {
+      e.dataTransfer.setData("text/wa", el.dataset.wa);
+      el.classList.add("dragging");
+    });
+    el.addEventListener("dragend", () => el.classList.remove("dragging"));
+  });
 }

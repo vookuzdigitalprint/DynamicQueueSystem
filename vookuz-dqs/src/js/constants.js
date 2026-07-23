@@ -33,6 +33,7 @@ export function createEmptyState() {
     broadcast_trigger: null,
     wa_flash_triggers: [],
     wa_checked: [],
+    wa_acc: [],
     offline_input: 0,
     offline_delete: 0,
     online_input: 0,
@@ -58,5 +59,6 @@ export function createInitialState() {
     broadcast_trigger: null,
     wa_flash_triggers: [],
     wa_checked: [],
+    wa_acc: [],
   };
 }

@@ -13,9 +13,9 @@ import {
   returnWAToPool,
   returnWAToCetak,
   deleteNumber,
-  deleteWAItem,
   flashWAItem,
   toggleWACheck,
+  toggleWAAcc,
   addWA,
   moveWABetweenDesigners,
 } from "../js/queueLogic.js";
@@ -109,7 +109,7 @@ export function paintAdmin(root) {
     renderDesignList(designList, st.current_processing, st.queue, d.id);
 
     const waList = col.querySelector(`.dcol-list[data-q="wa"]`);
-    waList.innerHTML = renderWAItems(st.wa_processing, st.wa_queue, d.id, s.wa_flash_triggers, s.wa_checked);
+    waList.innerHTML = renderWAItems(st.wa_processing, st.wa_queue, d.id, s.wa_flash_triggers, s.wa_checked, s.wa_acc);
   });
 
   // Pool columns
@@ -133,7 +133,7 @@ function renderDesignList(el, processing, queue, from) {
   el.innerHTML = proc + (items || '<span class="empty">kosong</span>');
 }
 
-function renderWAItems(processing, queue, from, flashTriggers, checked) {
+function renderWAItems(processing, queue, from, flashTriggers, checked, accList) {
   const colorCls = (n) => n.p === "cetak" ? " cetak-item" : " design-item";
   const all = [];
   if (processing) all.push(processing);
@@ -141,12 +141,14 @@ function renderWAItems(processing, queue, from, flashTriggers, checked) {
   return all.map((n) => {
     const flashing = (flashTriggers || []).some((t) => t.designerId === from && t.itemVal === n.v);
     const chk = (checked || []).some((t) => t.designerId === from && t.itemVal === n.v);
+    const acc = (accList || []).some((t) => t.designerId === from && t.itemVal === n.v);
     const nameHtml = n.name ? ` <span class="item-name">${n.name}</span>` : "";
-    return `<div class="qnum wa ${colorCls(n)}${flashing ? " flash-blink" : ""}${chk ? " wa-checked" : ""}" draggable="true" data-wa="${n.v}" data-from="${from}" data-q="wa">
+    return `<div class="qnum wa ${colorCls(n)}${flashing ? " flash-blink" : ""}${chk ? " wa-checked" : ""}${acc ? " wa-acc" : ""}" draggable="true" data-wa="${n.v}" data-from="${from}" data-q="wa">
+      ${acc ? `<span class="wa-acc-badge" data-wa-acc="${n.v}" data-from="${from}">ACC</span>` : ""}
       <span class="wa-flash" data-wa-flash="${n.v}" data-from="${from}"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></span>
       <span class="wa-cb" data-wa-cb="${n.v}" data-from="${from}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
       <span class="wa-num">${n.v}${nameHtml}</span>
-      <span class="wa-del" data-wa-del="${n.v}" data-from="${from}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+      <span class="wa-acc-btn" data-wa-acc="${n.v}" data-from="${from}">ACC</span>
     </div>`;
   }).join("") || '<span class="empty">kosong</span>';
 }
@@ -176,16 +178,16 @@ function wire(root) {
 
   const grid = root.querySelector("#admin-grid");
 
-  // Toggle designer + WA delete + WA flash + WA check
+  // Toggle designer + WA flash + WA check + WA acc
   grid.addEventListener("click", (e) => {
     const tg = e.target.closest(".toggle");
     if (tg) { toggleDesigner(tg.dataset.toggle); return; }
-    const del = e.target.closest(".wa-del");
-    if (del) { deleteWAItem(del.dataset.from, del.dataset.waDel); return; }
     const flash = e.target.closest(".wa-flash");
     if (flash) { flashWAItem(flash.dataset.from, flash.dataset.waFlash); return; }
     const cb = e.target.closest(".wa-cb");
-    if (cb) { toggleWACheck(cb.dataset.from, cb.dataset.waCb); }
+    if (cb) { toggleWACheck(cb.dataset.from, cb.dataset.waCb); return; }
+    const acc = e.target.closest(".wa-acc-btn, .wa-acc-badge");
+    if (acc) { toggleWAAcc(acc.dataset.from, acc.dataset.waAcc || acc.dataset.waCb); }
   });
 
   // Drag & Drop

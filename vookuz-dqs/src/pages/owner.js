@@ -73,9 +73,12 @@ function adminView(s) {
     if (st.wa_processing) waAll.push(st.wa_processing);
     if (st.wa_queue) waAll.push(...st.wa_queue);
     const checked = s.wa_checked || [];
+    const accList = s.wa_acc || [];
     const waItems = waAll.map((n) => {
       const chk = checked.some((t) => t.designerId === d.id && t.itemVal === n.v);
-      return `<div class="qnum wa ${n.p === "cetak" ? "cetak-item" : "design-item"}${chk ? " wa-checked" : ""}">
+      const acc = accList.some((t) => t.designerId === d.id && t.itemVal === n.v);
+      return `<div class="qnum wa ${n.p === "cetak" ? "cetak-item" : "design-item"}${chk ? " wa-checked" : ""}${acc ? " wa-acc" : ""}">
+        ${acc ? '<span class="wa-acc-badge">ACC</span>' : ""}
         <span class="wa-cb" data-wa-cb="${n.v}" data-from="${d.id}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
         <span class="wa-num">${n.v}${n.name ? ` <span class="item-name">${n.name}</span>` : ""}</span>
       </div>`;
@@ -114,16 +117,19 @@ function designerView(s, id) {
   if (d.wa_processing) waAll.push(d.wa_processing);
   if (d.wa_queue) waAll.push(...d.wa_queue);
   const chkList = s.wa_checked || [];
+  const accList = s.wa_acc || [];
   const waItems = waAll.map((n) => {
     const chk = chkList.some((t) => t.designerId === id && t.itemVal === n.v);
-    return `<div class="qnum wa${n.p === "cetak" ? " cetak-item" : " design-item"}${chk ? " wa-checked" : ""}">
+    const acc = accList.some((t) => t.designerId === id && t.itemVal === n.v);
+    return `<div class="qnum wa${n.p === "cetak" ? " cetak-item" : " design-item"}${chk ? " wa-checked" : ""}${acc ? " wa-acc" : ""}">
+      ${acc ? '<span class="wa-acc-badge">ACC</span>' : ""}
       <span class="wa-cb" data-wa-cb="${n.v}" data-from="${id}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
       <span class="wa-num">${n.v}${n.name ? ` <span class="item-name">${n.name}</span>` : ""}</span>
     </div>`;
   }).join("");
   return `<div class="d-single-grid">
     <div class="dcol ${d.status === "INACTIVE" ? "inactive" : ""}">
-      <div class="dcol-title">${d.name} — DESIGN</div>
+      <div class="dcol-title">${d.name} — OFFLINE</div>
       <div class="dcol-meta"><span class="status ${d.status === "ACTIVE" ? "on" : "off"}">${d.status === "INACTIVE" ? "CUTI" : "AKTIF"}</span><span>${designerCount(id)}/5</span></div>
       <div class="dcol-list tall">${processing}${queue || '<span class="empty">kosong</span>'}</div>
     </div>
