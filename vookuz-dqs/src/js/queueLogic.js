@@ -117,9 +117,7 @@ export function moveToDesigner(itemVal, designerId, poolKey = "design_pool") {
     const updated = assignItem(s, designerId, item);
     if (!updated) return s;
     let broadcast_trigger = s.broadcast_trigger;
-    if (!isWA(item)) {
-      broadcast_trigger = { queue_number: item.v, designer_name: d.name, timestamp: Date.now() };
-    }
+    broadcast_trigger = { queue_number: item.v, designer_name: d.name, timestamp: Date.now(), isWA: isWA(item) };
     return { ...s, [pk]: remaining, designers: { ...s.designers, [designerId]: updated }, broadcast_trigger };
   });
 }
@@ -223,7 +221,7 @@ export function requestFromPool(designerId) {
     const updated = assignItem(s, designerId, first);
     if (!updated) return s;
     let bt = s.broadcast_trigger;
-    if (!isWA(first)) bt = { queue_number: first.v, designer_name: d.name, timestamp: Date.now() };
+    bt = { queue_number: first.v, designer_name: d.name, timestamp: Date.now(), isWA: isWA(first) };
     return { ...s, design_pool: rest, designers: { ...s.designers, [designerId]: updated }, broadcast_trigger: bt };
   });
 }
@@ -238,7 +236,7 @@ export function requestFromCetak(designerId) {
     const updated = assignItem(s, designerId, first);
     if (!updated) return s;
     let bt = s.broadcast_trigger;
-    if (!isWA(first)) bt = { queue_number: first.v, designer_name: d.name, timestamp: Date.now() };
+    bt = { queue_number: first.v, designer_name: d.name, timestamp: Date.now(), isWA: isWA(first) };
     return { ...s, cetak_pool: rest, designers: { ...s.designers, [designerId]: updated }, broadcast_trigger: bt };
   });
 }
@@ -436,6 +434,6 @@ export function moveWABetweenDesigners(itemVal, fromId, toId) {
     let toQueue = [...(to.wa_queue || [])];
     if (wa_processing == null) wa_processing = item;
     else toQueue.push(item);
-    return { ...s, designers: { ...s.designers, [fromId]: { ...from, wa_queue: fromQueue, wa_processing: fromProcessing }, [toId]: { ...to, wa_queue: toQueue, wa_processing } } };
+    return { ...s, designers: { ...s.designers, [fromId]: { ...from, wa_queue: fromQueue, wa_processing: fromProcessing }, [toId]: { ...to, wa_queue: toQueue, wa_processing } }, broadcast_trigger: { queue_number: item.v, designer_name: to.name, timestamp: Date.now(), isWA: true } };
   });
 }

@@ -51,6 +51,9 @@ function handleBroadcast(s, root) {
   const b = s.broadcast_trigger;
   if (!b) return;
 
+  // Ignore WA broadcasts on TV (no overlay, no audio)
+  if (b.isWA) { lastBroadcast = b; return; }
+
   // Ignore the initial stale broadcast on page load to prevent autoplay blocking deadlocks
   if (lastBroadcast == null) {
     lastBroadcast = b;

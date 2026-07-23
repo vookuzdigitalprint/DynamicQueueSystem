@@ -277,6 +277,10 @@ body {
   justify-content: center; text-align: center; font-size: clamp(28px, 6vw, 90px); font-weight: 800; z-index: 999; padding: 40px; line-height: 1.25;
 }
 .tv-overlay.hidden { display: none; }
+.legend-box { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; padding: 8px 12px; }
+.legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.legend-dot.red { background: #dc2626; }
+.legend-dot.blue { background: #2563eb; }
 
 body.tv-mode { overflow: hidden; height: 100vh; }
 body.tv-mode #app-root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; padding: 0; }

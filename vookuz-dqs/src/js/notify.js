@@ -14,7 +14,7 @@ export function showNotification(title, body) {
   try {
     playChime();
     const n = new Notification(title, { body, icon: "/favicon.ico" });
-    setTimeout(() => n.close(), 5000);
+    setTimeout(() => n.close(), 3000);
   } catch (e) { /* ignore */ }
 }
 

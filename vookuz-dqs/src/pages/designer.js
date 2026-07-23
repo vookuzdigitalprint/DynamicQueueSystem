@@ -12,45 +12,20 @@ import {
   toggleWACheck,
 } from "../js/queueLogic.js";
 
-let prevNotified = {};
+let lastBcastTs = null;
 
 export function renderDesigner(root, sess) {
   const s = getState();
   const id = sess.designerId;
+  const d = s.designers[id];
   requestNotifyPermission();
 
-  // Check for new items and notify
-  const d = s.designers[id];
-  const key = id;
-  const prev = prevNotified[key] || {};
-  const notifyNew = (item, label) => {
-    if (!item) return;
-    const v = item.v;
-    if (prev.proc !== v && v != null) {
-      showNotification(`Antrian Baru — ${d.name}`, `${label}: ${v}${item.name ? " (" + item.name + ")" : ""}`);
-    }
-  };
-  const notifyQueueGrew = (queue, label) => {
-    const curLen = (queue || []).length;
-    if (curLen > (prev.qLen || 0)) {
-      const last = queue[curLen - 1];
-      if (last && last.v !== prev.lastQItem) {
-        showNotification(`Antrian Baru — ${d.name}`, `${label}: ${last.v}${last.name ? " (" + last.name + ")" : ""}`);
-      }
-    }
-  };
-  notifyNew(d.current_processing, "Design");
-  notifyNew(d.wa_processing, "WA");
-  notifyQueueGrew(d.queue, "Design");
-  notifyQueueGrew(d.wa_queue, "WA");
-  prevNotified[key] = {
-    proc: d.current_processing ? d.current_processing.v : null,
-    waProc: d.wa_processing ? d.wa_processing.v : null,
-    qLen: (d.queue || []).length,
-    waQLen: (d.wa_queue || []).length,
-    lastQItem: (d.queue || []).length > 0 ? d.queue[(d.queue || []).length - 1].v : null,
-    lastWAItem: (d.wa_queue || []).length > 0 ? d.wa_queue[(d.wa_queue || []).length - 1].v : null,
-  };
+  const b = s.broadcast_trigger;
+  if (b && b.timestamp !== lastBcastTs && b.designer_name === d.name) {
+    lastBcastTs = b.timestamp;
+    showNotification(`Antrian Baru — ${d.name}`, `${b.queue_number}`);
+  }
+
   const count = designerCount(id);
   const waCount = waDesignerCount(id);
   const empty = (d.queue || []).length === 0 && d.current_processing == null;
@@ -135,6 +110,9 @@ export function renderDesigner(root, sess) {
             <input id="self-wa" type="text" placeholder="WA + Nama" value="${oldWAVal}" />
             <button class="btn ok" id="self-add-wa" ${d.status !== "ACTIVE" ? "disabled" : ""}>+WA</button>
           </div>
+        </div>
+        <div class="panel-box legend-box">
+          <span class="legend-dot red"></span> design &nbsp; <span class="legend-dot blue"></span> cetak
         </div>
       </div>
     </div>
