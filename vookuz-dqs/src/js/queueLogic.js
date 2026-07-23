@@ -344,7 +344,8 @@ export function deleteNumber(itemVal, fromId) {
     }
     const wq = (d.wa_queue || []).filter((x) => x.v !== itemVal);
     const wp = d.wa_processing && d.wa_processing.v === itemVal ? null : d.wa_processing;
-    return { ...s, designers: { ...s.designers, [fromId]: { ...d, wa_queue: wq, wa_processing: wp } }, online_delete: (s.online_delete || 0) + 1 };
+    const clean = (arr) => (arr || []).filter((t) => !(t.designerId === fromId && t.itemVal === itemVal));
+    return { ...s, designers: { ...s.designers, [fromId]: { ...d, wa_queue: wq, wa_processing: wp } }, wa_flash_triggers: clean(s.wa_flash_triggers), wa_checked: clean(s.wa_checked), wa_acc: clean(s.wa_acc), online_delete: (s.online_delete || 0) + 1 };
   });
 }
 
@@ -435,7 +436,8 @@ export function deleteWAItem(designerId, itemVal) {
     const d = s.designers[designerId];
     const queue = (d.wa_queue || []).filter((x) => x.v !== itemVal);
     const processing = d.wa_processing && d.wa_processing.v === itemVal ? null : d.wa_processing;
-    return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_queue: queue, wa_processing: processing } }, online_delete: (s.online_delete || 0) + 1 };
+    const clean = (arr) => (arr || []).filter((t) => !(t.designerId === designerId && t.itemVal === itemVal));
+    return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_queue: queue, wa_processing: processing } }, wa_flash_triggers: clean(s.wa_flash_triggers), wa_checked: clean(s.wa_checked), wa_acc: clean(s.wa_acc), online_delete: (s.online_delete || 0) + 1 };
   });
 }
 
