@@ -1,4 +1,5 @@
 import { getState, designerCount, waDesignerCount } from "../js/store.js";
+import { requestNotifyPermission, showNotification } from "../js/notify.js";
 import {
   callNumber,
   skipNumber,
@@ -11,9 +12,45 @@ import {
   toggleWACheck,
 } from "../js/queueLogic.js";
 
+let prevNotified = {};
+
 export function renderDesigner(root, sess) {
   const s = getState();
   const id = sess.designerId;
+  requestNotifyPermission();
+
+  // Check for new items and notify
+  const d = s.designers[id];
+  const key = id;
+  const prev = prevNotified[key] || {};
+  const notifyNew = (item, label) => {
+    if (!item) return;
+    const v = item.v;
+    if (prev.proc !== v && v != null) {
+      showNotification(`Antrian Baru — ${d.name}`, `${label}: ${v}${item.name ? " (" + item.name + ")" : ""}`);
+    }
+  };
+  const notifyQueueGrew = (queue, label) => {
+    const curLen = (queue || []).length;
+    if (curLen > (prev.qLen || 0)) {
+      const last = queue[curLen - 1];
+      if (last && last.v !== prev.lastQItem) {
+        showNotification(`Antrian Baru — ${d.name}`, `${label}: ${last.v}${last.name ? " (" + last.name + ")" : ""}`);
+      }
+    }
+  };
+  notifyNew(d.current_processing, "Design");
+  notifyNew(d.wa_processing, "WA");
+  notifyQueueGrew(d.queue, "Design");
+  notifyQueueGrew(d.wa_queue, "WA");
+  prevNotified[key] = {
+    proc: d.current_processing ? d.current_processing.v : null,
+    waProc: d.wa_processing ? d.wa_processing.v : null,
+    qLen: (d.queue || []).length,
+    waQLen: (d.wa_queue || []).length,
+    lastQItem: (d.queue || []).length > 0 ? d.queue[(d.queue || []).length - 1].v : null,
+    lastWAItem: (d.wa_queue || []).length > 0 ? d.wa_queue[(d.wa_queue || []).length - 1].v : null,
+  };
   const d = s.designers[id];
   const count = designerCount(id);
   const waCount = waDesignerCount(id);
