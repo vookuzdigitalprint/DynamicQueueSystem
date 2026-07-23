@@ -26,7 +26,7 @@ export function renderTV(root) {
       if (st.wa_processing) waAll.push(st.wa_processing);
       if (st.wa_queue) waAll.push(...st.wa_queue);
       if (waAll.length === 0) waBody = `<div class="tv-wa-empty">—</div>`;
-      else waBody = `<div class="tv-wa-grid">${waAll.map((n) => `<span class="tv-wa-box${n.p === "cetak" ? " cetak" : " design"}">${n.v}</span>`).join("")}</div>`;
+      else waBody = `<div class="tv-wa-grid">${waAll.map((n) => `<span class="tv-wa-box${n.p === "cetak" ? " cetak" : " design"}">${n.v}${n.name ? `<br><small>${n.name}</small>` : ""}</span>`).join("")}</div>`;
     }
     return `<div class="tv-card ${st.status === "INACTIVE" ? "inactive" : ""}">
       <div class="tv-name">${d.name}</div>

@@ -67,24 +67,32 @@ export function addToCetakPool(number) {
   return true;
 }
 
-export function addWAtoDesignPool(wa) {
-  const raw = String(wa).replace(/\D/g, "");
-  if (raw.length < 1 || raw.length > 4) return false;
-  const padded = raw.padStart(4, "0");
+export function addWAtoDesignPool(wa, name) {
+  const raw = String(wa).trim();
+  if (!raw) return false;
+  const digits = raw.replace(/\D/g, "");
+  const isNumeric = digits.length > 0 && digits === raw;
+  if (isNumeric && (digits.length < 1 || digits.length > 4)) return false;
+  const v = isNumeric ? digits.padStart(4, "0") : raw;
+  const nm = name && name.trim();
   setState((s) => {
-    if (hasItem(s.design_pool, padded)) return s;
-    return { ...s, design_pool: [...(s.design_pool || []), { v: padded, p: "design", w: true }], online_input: (s.online_input || 0) + 1 };
+    if (hasItem(s.design_pool, v)) return s;
+    return { ...s, design_pool: [...(s.design_pool || []), { v, p: "design", w: true, name: nm || undefined }], online_input: (s.online_input || 0) + 1 };
   });
   return true;
 }
 
-export function addWAtoCetakPool(wa) {
-  const raw = String(wa).replace(/\D/g, "");
-  if (raw.length < 1 || raw.length > 4) return false;
-  const padded = raw.padStart(4, "0");
+export function addWAtoCetakPool(wa, name) {
+  const raw = String(wa).trim();
+  if (!raw) return false;
+  const digits = raw.replace(/\D/g, "");
+  const isNumeric = digits.length > 0 && digits === raw;
+  if (isNumeric && (digits.length < 1 || digits.length > 4)) return false;
+  const v = isNumeric ? digits.padStart(4, "0") : raw;
+  const nm = name && name.trim();
   setState((s) => {
-    if (hasItem(s.cetak_pool, padded)) return s;
-    return { ...s, cetak_pool: [...(s.cetak_pool || []), { v: padded, p: "cetak", w: true }], online_input: (s.online_input || 0) + 1 };
+    if (hasItem(s.cetak_pool, v)) return s;
+    return { ...s, cetak_pool: [...(s.cetak_pool || []), { v, p: "cetak", w: true, name: nm || undefined }], online_input: (s.online_input || 0) + 1 };
   });
   return true;
 }
@@ -326,15 +334,19 @@ export function deleteNumber(itemVal, fromId) {
 
 // ========== WA DIRECT ADD ==========
 
-export function addWA(designerId, waNumber) {
-  const raw = String(waNumber).replace(/\D/g, "");
-  if (raw.length < 1 || raw.length > 4) return false;
-  const padded = raw.padStart(4, "0");
+export function addWA(designerId, waNumber, name) {
+  const raw = String(waNumber).trim();
+  if (!raw) return false;
+  const digits = raw.replace(/\D/g, "");
+  const isNumeric = digits.length > 0 && digits === raw;
+  if (isNumeric && (digits.length < 1 || digits.length > 4)) return false;
+  const v = isNumeric ? digits.padStart(4, "0") : raw;
+  const nm = name && name.trim();
   setState((s) => {
     const d = s.designers[designerId];
     if (d.status !== "ACTIVE") return s;
-    if (hasItem(d.wa_queue, padded) || (d.wa_processing && d.wa_processing.v === padded)) return s;
-    const item = { v: padded, p: "design", w: true };
+    if (hasItem(d.wa_queue, v) || (d.wa_processing && d.wa_processing.v === v)) return s;
+    const item = { v, p: "design", w: true, name: nm || undefined };
     let wa_processing = d.wa_processing;
     let wa_queue = [...(d.wa_queue || [])];
     if (wa_processing == null) wa_processing = item;
@@ -369,6 +381,15 @@ export function skipWA(designerId) {
     queue.splice(1, 0, skipped);
     const next = queue.shift();
     return { ...s, designers: { ...s.designers, [designerId]: { ...d, wa_processing: next, wa_queue: queue } } };
+  });
+}
+
+export function toggleWACheck(designerId, itemVal) {
+  setState((s) => {
+    const list = s.wa_checked || [];
+    const idx = list.findIndex((t) => t.designerId === designerId && t.itemVal === itemVal);
+    if (idx >= 0) return { ...s, wa_checked: list.filter((_, i) => i !== idx) };
+    return { ...s, wa_checked: [...list, { designerId, itemVal }] };
   });
 }
 

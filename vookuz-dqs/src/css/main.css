@@ -190,6 +190,10 @@ body {
 .qnum.dragging { opacity: .4; }
 .qnum.wa { position: relative; }
 .qnum.wa::after { content: "WA"; font-size: 8px; font-weight: 700; margin-left: 4px; opacity: .5; }
+.qnum.wa.wa-checked { opacity: .5; }
+.qnum.wa.wa-checked .wa-num { text-decoration: line-through; }
+.wa-cb { cursor: pointer; display: inline-flex; align-items: center; margin-right: 4px; opacity: .6; }
+.wa-cb:hover { opacity: 1; }
 .qnum.wa.processing { animation: none; }
 .wa-del, .wa-flash { position: absolute; top: 50%; transform: translateY(-50%); cursor: pointer; line-height: 1; opacity: .45; display: flex; align-items: center; padding: 6px; }
 .wa-del:hover, .wa-flash:hover { opacity: 1; }
@@ -202,6 +206,7 @@ body {
 .qnum.processing.design-item { background: #b91c1c; color: #fff; border-color: #b91c1c; }
 .qnum.processing.cetak-item { background: #1e40af; color: #fff; border-color: #1e40af; }
 
+.item-name { font-weight: 400; font-size: 11px; opacity: .7; margin-left: 2px; }
 .status { padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; border: 1px solid var(--line-strong); color: var(--muted); }
 .status.on { background: rgba(5,150,105,.12); color: var(--ok); border-color: transparent; }
 .status.off { background: var(--surface-2); color: var(--muted); border-color: transparent; }
@@ -260,7 +265,8 @@ body {
 .tv-num.design { color: #b91c1c; }
 .tv-num.cetak { color: #1e40af; }
 .tv-wa-grid { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; align-content: center; padding: 4px; }
-.tv-wa-box { font-size: clamp(10px, 1.2vw, 14px); font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid; line-height: 1.4; }
+.tv-wa-box { font-size: clamp(10px, 1.2vw, 14px); font-weight: 700; padding: 2px 6px; border-radius: 4px; border: 1px solid; line-height: 1.4; text-align: center; }
+.tv-wa-box small { font-weight: 400; font-size: 9px; opacity: .7; display: block; }
 .tv-wa-box.design { background: #fef2f2; border-color: #fca5a5; color: #b91c1c; }
 .tv-wa-box.cetak { background: #eff6ff; border-color: #93c5fd; color: #1e40af; }
 .tv-wa-empty { font-size: clamp(16px, 2.5vw, 28px); color: var(--muted); font-weight: 600; }

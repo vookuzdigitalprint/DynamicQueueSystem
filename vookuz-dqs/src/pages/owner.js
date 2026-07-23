@@ -1,5 +1,6 @@
 import { DESIGNERS } from "../js/constants.js";
 import { getState, designerCount, waDesignerCount } from "../js/store.js";
+import { toggleWACheck } from "../js/queueLogic.js";
 
 let view = "tv";
 
@@ -45,7 +46,7 @@ function tvView(s) {
       if (st.wa_processing) waAll.push(st.wa_processing);
       if (st.wa_queue) waAll.push(...st.wa_queue);
       if (waAll.length === 0) waBody = `<div class="tv-wa-empty">—</div>`;
-      else waBody = `<div class="tv-wa-grid">${waAll.map((n) => `<span class="tv-wa-box${n.p === "cetak" ? " cetak" : " design"}">${n.v}</span>`).join("")}</div>`;
+      else waBody = `<div class="tv-wa-grid">${waAll.map((n) => `<span class="tv-wa-box${n.p === "cetak" ? " cetak" : " design"}">${n.v}${n.name ? `<br><small>${n.name}</small>` : ""}</span>`).join("")}</div>`;
     }
     return `<div class="tv-card ${st.status === "INACTIVE" ? "inactive" : ""}">
       <div class="tv-name">${d.name}</div>
@@ -71,7 +72,14 @@ function adminView(s) {
     const waAll = [];
     if (st.wa_processing) waAll.push(st.wa_processing);
     if (st.wa_queue) waAll.push(...st.wa_queue);
-    const waItems = waAll.map((n) => `<div class="qnum wa ${n.p === "cetak" ? "cetak-item" : "design-item"}">${n.v}</div>`).join("");
+    const checked = s.wa_checked || [];
+    const waItems = waAll.map((n) => {
+      const chk = checked.some((t) => t.designerId === d.id && t.itemVal === n.v);
+      return `<div class="qnum wa ${n.p === "cetak" ? "cetak-item" : "design-item"}${chk ? " wa-checked" : ""}">
+        <span class="wa-cb" data-wa-cb="${n.v}" data-from="${d.id}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
+        <span class="wa-num">${n.v}${n.name ? ` <span class="item-name">${n.name}</span>` : ""}</span>
+      </div>`;
+    }).join("");
     return `<div class="dcol-wrap${st.status === "INACTIVE" ? " inactive" : ""}">
       <div class="dcol-title">${d.name}</div>
       <div class="dcol-meta"><span class="status ${st.status === "ACTIVE" ? "on" : "off"}">${st.status === "INACTIVE" ? "CUTI" : locked ? "PENUH" : "AKTIF"}</span><span>${count}/5</span></div>
@@ -80,18 +88,18 @@ function adminView(s) {
       <div class="dcol-list wa" data-q="wa">${waItems || '<span class="empty">kosong</span>'}</div>
     </div>`;
   }).join("");
-  const poolItem = (item, pool) => `<div class="qnum${item.w ? " wa" : ""}${item.p === "cetak" ? " cetak-item" : " design-item"}">${item.v}</div>`;
+  const poolItem = (item) => `<div class="qnum${item.w ? " wa" : ""}${item.p === "cetak" ? " cetak-item" : " design-item"}">${item.v}${item.name ? ` <span class="item-name">${item.name}</span>` : ""}</div>`;
   return `<div class="admin-grid" id="owner-admin-grid">
     ${cols}
     <div class="dcol pool-col" id="pool-col-design_pool">
       <div class="dcol-title">DESIGN <span class="pool-dot red"></span></div>
       <div class="dcol-meta">${(s.design_pool || []).length} antrian</div>
-      <div class="dcol-list">${(s.design_pool || []).map((n) => poolItem(n, "design_pool")).join("") || '<span class="empty">kosong</span>'}</div>
+      <div class="dcol-list">${(s.design_pool || []).map((n) => poolItem(n)).join("") || '<span class="empty">kosong</span>'}</div>
     </div>
     <div class="dcol pool-col" id="pool-col-cetak_pool">
       <div class="dcol-title">CETAK <span class="pool-dot blue"></span></div>
       <div class="dcol-meta">${(s.cetak_pool || []).length} antrian</div>
-      <div class="dcol-list">${(s.cetak_pool || []).map((n) => poolItem(n, "cetak_pool")).join("") || '<span class="empty">kosong</span>'}</div>
+      <div class="dcol-list">${(s.cetak_pool || []).map((n) => poolItem(n)).join("") || '<span class="empty">kosong</span>'}</div>
     </div>
   </div>`;
 }
@@ -105,7 +113,14 @@ function designerView(s, id) {
   const waAll = [];
   if (d.wa_processing) waAll.push(d.wa_processing);
   if (d.wa_queue) waAll.push(...d.wa_queue);
-  const waItems = waAll.map((n) => `<div class="qnum wa${n.p === "cetak" ? " cetak-item" : " design-item"}">${n.v}</div>`).join("");
+  const chkList = s.wa_checked || [];
+  const waItems = waAll.map((n) => {
+    const chk = chkList.some((t) => t.designerId === id && t.itemVal === n.v);
+    return `<div class="qnum wa${n.p === "cetak" ? " cetak-item" : " design-item"}${chk ? " wa-checked" : ""}">
+      <span class="wa-cb" data-wa-cb="${n.v}" data-from="${id}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
+      <span class="wa-num">${n.v}${n.name ? ` <span class="item-name">${n.name}</span>` : ""}</span>
+    </div>`;
+  }).join("");
   return `<div class="d-single-grid">
     <div class="dcol ${d.status === "INACTIVE" ? "inactive" : ""}">
       <div class="dcol-title">${d.name} — DESIGN</div>
@@ -124,4 +139,7 @@ function wire(root) {
   root.querySelectorAll(".owner-nav button").forEach(
     (b) => (b.onclick = () => { view = b.dataset.v; renderOwner(root); })
   );
+  root.querySelectorAll(".wa-cb").forEach((el) => {
+    el.onclick = (e) => { e.stopPropagation(); toggleWACheck(el.dataset.from || el.closest("[data-col]")?.dataset.col, el.dataset.waCb); };
+  });
 }

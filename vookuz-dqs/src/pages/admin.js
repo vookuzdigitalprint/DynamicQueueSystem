@@ -15,6 +15,7 @@ import {
   deleteNumber,
   deleteWAItem,
   flashWAItem,
+  toggleWACheck,
   addWA,
   moveWABetweenDesigners,
 } from "../js/queueLogic.js";
@@ -25,11 +26,13 @@ let mounted = false;
 function renderPoolItem(item, pool) {
   const isWAItem = item.w === true;
   const val = item.v;
+  const name = item.name || "";
   const src = item.p || pool;
   const colorCls = src === "cetak" ? " cetak-item" : " design-item";
   const waCls = isWAItem ? " wa" : "";
   const data = isWAItem ? `data-wa="${val}"` : `data-num="${val}"`;
-  return `<div class="qnum${waCls}${colorCls}" draggable="true" ${data} data-from="${pool}" data-iswa="${isWAItem ? 1 : 0}">${val}</div>`;
+  const nameHtml = name ? ` <span class="item-name">${name}</span>` : "";
+  return `<div class="qnum${waCls}${colorCls}" draggable="true" ${data} data-from="${pool}" data-iswa="${isWAItem ? 1 : 0}">${val}${nameHtml}</div>`;
 }
 
 function poolColumn(id, title, dotClass, items, trash) {
@@ -37,7 +40,7 @@ function poolColumn(id, title, dotClass, items, trash) {
     <div class="dcol pool-col" id="pool-col-${id}">
       <div class="dcol-title">${title} <span class="pool-dot ${dotClass}"></span></div>
       <div class="pool-tools">
-        <input class="pool-input" id="new-${id}" type="text" autocomplete="off" spellcheck="false" placeholder="No / WA" />
+        <input class="pool-input" id="new-${id}" type="text" autocomplete="off" spellcheck="false" placeholder="No / WA + Nama" />
         <button class="btn accent sm" id="add-${id}-btn">+</button>
       </div>
       <div class="dcol-list" id="${id}-list" data-drop="${id}">
@@ -106,7 +109,7 @@ export function paintAdmin(root) {
     renderDesignList(designList, st.current_processing, st.queue, d.id);
 
     const waList = col.querySelector(`.dcol-list[data-q="wa"]`);
-    waList.innerHTML = renderWAItems(st.wa_processing, st.wa_queue, d.id, s.wa_flash_triggers);
+    waList.innerHTML = renderWAItems(st.wa_processing, st.wa_queue, d.id, s.wa_flash_triggers, s.wa_checked);
   });
 
   // Pool columns
@@ -130,30 +133,40 @@ function renderDesignList(el, processing, queue, from) {
   el.innerHTML = proc + (items || '<span class="empty">kosong</span>');
 }
 
-function renderWAItems(processing, queue, from, flashTriggers) {
+function renderWAItems(processing, queue, from, flashTriggers, checked) {
   const colorCls = (n) => n.p === "cetak" ? " cetak-item" : " design-item";
   const all = [];
   if (processing) all.push(processing);
   if (queue) all.push(...queue);
   return all.map((n) => {
     const flashing = (flashTriggers || []).some((t) => t.designerId === from && t.itemVal === n.v);
-    return `<div class="qnum wa ${colorCls(n)}${flashing ? " flash-blink" : ""}" draggable="true" data-wa="${n.v}" data-from="${from}" data-q="wa">
+    const chk = (checked || []).some((t) => t.designerId === from && t.itemVal === n.v);
+    const nameHtml = n.name ? ` <span class="item-name">${n.name}</span>` : "";
+    return `<div class="qnum wa ${colorCls(n)}${flashing ? " flash-blink" : ""}${chk ? " wa-checked" : ""}" draggable="true" data-wa="${n.v}" data-from="${from}" data-q="wa">
       <span class="wa-flash" data-wa-flash="${n.v}" data-from="${from}"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/></svg></span>
-      ${n.v}
+      <span class="wa-cb" data-wa-cb="${n.v}" data-from="${from}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${chk ? '<polyline points="20 6 9 17 4 12"/>' : '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>'}</svg></span>
+      <span class="wa-num">${n.v}${nameHtml}</span>
       <span class="wa-del" data-wa-del="${n.v}" data-from="${from}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
     </div>`;
   }).join("") || '<span class="empty">kosong</span>';
 }
 
 function autoAdd(poolKey, raw) {
-  const digits = String(raw).replace(/\D/g, "");
-  if (!digits) return false;
-  if (digits.length <= 2) {
-    const n = parseInt(digits, 10);
-    if (n < 1 || n > 99) return false;
-    return poolKey === "cetak_pool" ? addToCetakPool(n) : addToDesignPool(n);
+  const s = String(raw).trim();
+  if (!s) return false;
+  const match = s.match(/^(\d+)\s*(.*)/);
+  if (match) {
+    const digits = match[1];
+    const name = match[2].trim();
+    if (digits.length <= 2) {
+      const n = parseInt(digits, 10);
+      if (n < 1 || n > 99) return false;
+      return poolKey === "cetak_pool" ? addToCetakPool(n) : addToDesignPool(n);
+    }
+    return poolKey === "cetak_pool" ? addWAtoCetakPool(digits, name) : addWAtoDesignPool(digits, name);
   }
-  return poolKey === "cetak_pool" ? addWAtoCetakPool(digits) : addWAtoDesignPool(digits);
+  // non-numeric → WA dengan teks sebagai v
+  return poolKey === "cetak_pool" ? addWAtoCetakPool(s) : addWAtoDesignPool(s);
 }
 
 function wire(root) {
@@ -163,14 +176,16 @@ function wire(root) {
 
   const grid = root.querySelector("#admin-grid");
 
-  // Toggle designer + WA delete + WA flash
+  // Toggle designer + WA delete + WA flash + WA check
   grid.addEventListener("click", (e) => {
     const tg = e.target.closest(".toggle");
     if (tg) { toggleDesigner(tg.dataset.toggle); return; }
     const del = e.target.closest(".wa-del");
     if (del) { deleteWAItem(del.dataset.from, del.dataset.waDel); return; }
     const flash = e.target.closest(".wa-flash");
-    if (flash) { flashWAItem(flash.dataset.from, flash.dataset.waFlash); }
+    if (flash) { flashWAItem(flash.dataset.from, flash.dataset.waFlash); return; }
+    const cb = e.target.closest(".wa-cb");
+    if (cb) { toggleWACheck(cb.dataset.from, cb.dataset.waCb); }
   });
 
   // Drag & Drop
