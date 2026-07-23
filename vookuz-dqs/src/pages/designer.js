@@ -51,7 +51,6 @@ export function renderDesigner(root, sess) {
     lastQItem: (d.queue || []).length > 0 ? d.queue[(d.queue || []).length - 1].v : null,
     lastWAItem: (d.wa_queue || []).length > 0 ? d.wa_queue[(d.wa_queue || []).length - 1].v : null,
   };
-  const d = s.designers[id];
   const count = designerCount(id);
   const waCount = waDesignerCount(id);
   const empty = (d.queue || []).length === 0 && d.current_processing == null;
