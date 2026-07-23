@@ -350,7 +350,7 @@ export function deleteNumber(itemVal, fromId) {
 
 // ========== WA DIRECT ADD ==========
 
-export function addWA(designerId, waNumber, name) {
+export function addWA(designerId, waNumber, name, pool) {
   const raw = String(waNumber).trim();
   if (!raw) return false;
   const digits = raw.replace(/\D/g, "");
@@ -358,11 +358,12 @@ export function addWA(designerId, waNumber, name) {
   if (isNumeric && (digits.length < 1 || digits.length > 4)) return false;
   const v = isNumeric ? digits.padStart(4, "0") : raw;
   const nm = name && name.trim();
+  const po = pool === "cetak" ? "cetak" : "design";
   setState((s) => {
     const d = s.designers[designerId];
     if (d.status !== "ACTIVE") return s;
     if (hasItem(d.wa_queue, v) || (d.wa_processing && d.wa_processing.v === v)) return s;
-    const item = { v, p: "design", w: true, name: nm || undefined };
+    const item = { v, p: po, w: true, name: nm || undefined };
     let wa_processing = d.wa_processing;
     let wa_queue = [...(d.wa_queue || [])];
     if (wa_processing == null) wa_processing = item;

@@ -6,10 +6,9 @@ import {
   finishNumber,
   requestFromPool,
   requestFromCetak,
-  addToDesignPool,
-  addToCetakPool,
-  addWAtoDesignPool,
-  addWAtoCetakPool,
+  selfAdd,
+  selfAddCetak,
+  addWA,
   deleteWAItem,
   toggleWACheck,
 } from "../js/queueLogic.js";
@@ -149,7 +148,7 @@ export function renderDesigner(root, sess) {
     el.onclick = (e) => { e.stopPropagation(); toggleWACheck(id, el.dataset.waCb); };
   });
 
-  const autoAddPool = (inputEl, poolKey) => {
+  const autoAddOwn = (inputEl, isCetak) => {
     const raw = inputEl.value.trim();
     if (!raw) return;
     const match = raw.match(/^(\d+)\s*(.*)/);
@@ -159,29 +158,25 @@ export function renderDesigner(root, sess) {
       if (digits.length <= 2) {
         const n = parseInt(digits, 10);
         if (n >= 1 && n <= 99) {
-          if (poolKey === "design_pool") addToDesignPool(n);
-          else addToCetakPool(n);
+          if (isCetak) selfAddCetak(id, n);
+          else selfAdd(id, n);
           inputEl.value = "";
         }
       } else {
-        if (poolKey === "design_pool") addWAtoDesignPool(digits, name);
-        else addWAtoCetakPool(digits, name);
-        inputEl.value = "";
+        if (addWA(id, digits, name, isCetak ? "cetak" : "design")) inputEl.value = "";
       }
     } else {
-      if (poolKey === "design_pool") addWAtoDesignPool(raw);
-      else addWAtoCetakPool(raw);
-      inputEl.value = "";
+      if (addWA(id, raw, "", isCetak ? "cetak" : "design")) inputEl.value = "";
     }
   };
 
   const designPoolInput = root.querySelector("#self-pool-design");
-  root.querySelector("#self-add-design").onclick = () => autoAddPool(designPoolInput, "design_pool");
-  designPoolInput.onkeydown = (e) => { if (e.key === "Enter") autoAddPool(designPoolInput, "design_pool"); };
+  root.querySelector("#self-add-design").onclick = () => autoAddOwn(designPoolInput, false);
+  designPoolInput.onkeydown = (e) => { if (e.key === "Enter") autoAddOwn(designPoolInput, false); };
 
   const cetakPoolInput = root.querySelector("#self-pool-cetak");
-  root.querySelector("#self-add-cetak").onclick = () => autoAddPool(cetakPoolInput, "cetak_pool");
-  cetakPoolInput.onkeydown = (e) => { if (e.key === "Enter") autoAddPool(cetakPoolInput, "cetak_pool"); };
+  root.querySelector("#self-add-cetak").onclick = () => autoAddOwn(cetakPoolInput, true);
+  cetakPoolInput.onkeydown = (e) => { if (e.key === "Enter") autoAddOwn(cetakPoolInput, true); };
 
   if (wasDesignFocused && designPoolInput) {
     designPoolInput.focus();
