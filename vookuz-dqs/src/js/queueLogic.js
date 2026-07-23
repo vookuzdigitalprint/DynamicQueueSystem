@@ -259,6 +259,24 @@ export function selfAdd(designerId, number) {
   return true;
 }
 
+export function selfAddCetak(designerId, number) {
+  const n = Number(number);
+  if (!Number.isInteger(n) || n < 1 || n > 100) return false;
+  setState((s) => {
+    const d = s.designers[designerId];
+    if (d.status !== "ACTIVE") return s;
+    if (designerCount(designerId) >= GLOBAL_LIMIT_PER_DESIGNER) return s;
+    if (offlineNumberExists(s, n)) return s;
+    const item = { v: n, p: "cetak" };
+    let current_processing = d.current_processing;
+    let queue = [...(d.queue || [])];
+    if (current_processing == null) current_processing = item;
+    else queue.push(item);
+    return { ...s, designers: { ...s.designers, [designerId]: { ...d, queue, current_processing } }, offline_input: (s.offline_input || 0) + 1 };
+  });
+  return true;
+}
+
 // ========== RETURN TO POOL ==========
 
 export function returnToPool(itemVal, fromId, poolKey = "design_pool") {

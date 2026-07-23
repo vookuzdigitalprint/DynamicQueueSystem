@@ -6,9 +6,11 @@ import {
   finishNumber,
   requestFromPool,
   requestFromCetak,
-  selfAdd,
+  addToDesignPool,
+  addToCetakPool,
+  addWAtoDesignPool,
+  addWAtoCetakPool,
   deleteWAItem,
-  addWA,
   toggleWACheck,
 } from "../js/queueLogic.js";
 
@@ -54,12 +56,12 @@ export function renderDesigner(root, sess) {
     </div>`;
   }).join("");
 
-  const oldInput = root.querySelector("#self-num");
-  const wasFocused = oldInput && document.activeElement === oldInput;
-  const oldVal = oldInput ? oldInput.value : "";
-  const oldWAInput = root.querySelector("#self-wa");
-  const wasWAFocused = oldWAInput && document.activeElement === oldWAInput;
-  const oldWAVal = oldWAInput ? oldWAInput.value : "";
+  const oldDesignPool = root.querySelector("#self-pool-design");
+  const wasDesignFocused = oldDesignPool && document.activeElement === oldDesignPool;
+  const oldDesignVal = oldDesignPool ? oldDesignPool.value : "";
+  const oldCetakPool = root.querySelector("#self-pool-cetak");
+  const wasCetakFocused = oldCetakPool && document.activeElement === oldCetakPool;
+  const oldCetakVal = oldCetakPool ? oldCetakPool.value : "";
 
   root.innerHTML = `
     <div class="designer-layout">
@@ -86,29 +88,29 @@ export function renderDesigner(root, sess) {
       
       <div class="designer-sidebar">
         <div class="panel-box">
-          <h3 class="panel-title">Aksi Design</h3>
+          <h3 class="panel-title"><span class="pool-dot red"></span> Aksi Design</h3>
           <div class="panel-actions">
             <button class="btn ok lg" id="call" ${d.status !== "ACTIVE" || (d.current_processing == null && (d.queue || []).length === 0) ? "disabled" : ""}>PANGGIL</button>
             <button class="btn warn" id="skip" ${d.current_processing == null ? "disabled" : ""}>LEWATI</button>
             <button class="btn danger" id="finish" ${d.current_processing == null ? "disabled" : ""}>SELESAI</button>
-            <button class="btn ghost" id="req" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA DESIGN</button>
-            <button class="btn ghost" id="req-cetak" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA CETAK</button>
+            <button class="btn ghost design-btn" id="req" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA DESIGN</button>
+            <button class="btn ghost cetak-btn" id="req-cetak" ${!empty || d.status !== "ACTIVE" ? "disabled" : ""}>MINTA CETAK</button>
           </div>
           <div id="empty-toast" class="empty-toast"></div>
         </div>
         
         <div class="panel-box">
-          <h3 class="panel-title">Tambah Antrian Design</h3>
+          <h3 class="panel-title"><span class="pool-dot red"></span> Design Pool</h3>
           <div class="d-selfadd-sm">
-            <input id="self-num" type="number" min="1" max="100" placeholder="No pelanggan" value="${oldVal}" />
-            <button class="btn accent" id="self-add" ${d.status !== "ACTIVE" || count >= 5 ? "disabled" : ""}>Tambah</button>
+            <input id="self-pool-design" class="input-design" type="text" placeholder="No / WA + Nama" value="${oldDesignVal}" />
+            <button class="btn accent design-btn" id="self-add-design">+</button>
           </div>
         </div>
         <div class="panel-box">
-          <h3 class="panel-title">Tambah WA</h3>
+          <h3 class="panel-title"><span class="pool-dot blue"></span> Cetak Pool</h3>
           <div class="d-selfadd-sm">
-            <input id="self-wa" type="text" placeholder="WA + Nama" value="${oldWAVal}" />
-            <button class="btn ok" id="self-add-wa" ${d.status !== "ACTIVE" ? "disabled" : ""}>+WA</button>
+            <input id="self-pool-cetak" class="input-cetak" type="text" placeholder="No / WA + Nama" value="${oldCetakVal}" />
+            <button class="btn accent cetak-btn" id="self-add-cetak">+</button>
           </div>
         </div>
         <div class="panel-box legend-box">
@@ -147,34 +149,43 @@ export function renderDesigner(root, sess) {
     el.onclick = (e) => { e.stopPropagation(); toggleWACheck(id, el.dataset.waCb); };
   });
 
-  // Self add design
-  const input = root.querySelector("#self-num");
-  const doSelf = () => {
-    const val = input.value;
-    input.value = "";
-    selfAdd(id, val);
-  };
-  root.querySelector("#self-add").onclick = doSelf;
-  input.onkeydown = (e) => { if (e.key === "Enter") doSelf(); };
-
-  // Self add WA
-  const waInput = root.querySelector("#self-wa");
-  const doSelfWA = () => {
-    const raw = waInput.value.trim();
+  const autoAddPool = (inputEl, poolKey) => {
+    const raw = inputEl.value.trim();
     if (!raw) return;
     const match = raw.match(/^(\d+)\s*(.*)/);
-    if (match && match[1].length >= 3 && match[1].length <= 4) {
-      if (addWA(id, match[1], match[2].trim())) waInput.value = "";
+    if (match) {
+      const digits = match[1];
+      const name = match[2].trim();
+      if (digits.length <= 2) {
+        const n = parseInt(digits, 10);
+        if (n >= 1 && n <= 99) {
+          if (poolKey === "design_pool") addToDesignPool(n);
+          else addToCetakPool(n);
+          inputEl.value = "";
+        }
+      } else {
+        if (poolKey === "design_pool") addWAtoDesignPool(digits, name);
+        else addWAtoCetakPool(digits, name);
+        inputEl.value = "";
+      }
     } else {
-      if (addWA(id, raw)) waInput.value = "";
+      if (poolKey === "design_pool") addWAtoDesignPool(raw);
+      else addWAtoCetakPool(raw);
+      inputEl.value = "";
     }
   };
-  root.querySelector("#self-add-wa").onclick = doSelfWA;
-  waInput.onkeydown = (e) => { if (e.key === "Enter") doSelfWA(); };
 
-  if (wasFocused && input) {
-    input.focus();
-  } else if (wasWAFocused && waInput) {
-    waInput.focus();
+  const designPoolInput = root.querySelector("#self-pool-design");
+  root.querySelector("#self-add-design").onclick = () => autoAddPool(designPoolInput, "design_pool");
+  designPoolInput.onkeydown = (e) => { if (e.key === "Enter") autoAddPool(designPoolInput, "design_pool"); };
+
+  const cetakPoolInput = root.querySelector("#self-pool-cetak");
+  root.querySelector("#self-add-cetak").onclick = () => autoAddPool(cetakPoolInput, "cetak_pool");
+  cetakPoolInput.onkeydown = (e) => { if (e.key === "Enter") autoAddPool(cetakPoolInput, "cetak_pool"); };
+
+  if (wasDesignFocused && designPoolInput) {
+    designPoolInput.focus();
+  } else if (wasCetakFocused && cetakPoolInput) {
+    cetakPoolInput.focus();
   }
 }
